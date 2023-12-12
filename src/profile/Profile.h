@@ -2,8 +2,8 @@
 // Created by rutvora on 10/31/23.
 //
 
-#ifndef INTERCONNECT_SIDE_CHANNELS_HELPERS_PROFILE_H_
-#define INTERCONNECT_SIDE_CHANNELS_HELPERS_PROFILE_H_
+#ifndef HELPERS_PROFILE_H_
+#define HELPERS_PROFILE_H_
 
 #include <utility>
 #include <cstdint>
@@ -76,4 +76,4 @@ uint64_t profile(Func &function, Args &... args);
 // transitively imported in whatever compilation unit (i.e. cpp or cu or c file) they are used in.
 #include "Profile.tpp"
 
-#endif //INTERCONNECT_SIDE_CHANNELS_HELPERS_PROFILE_H_
+#endif //HELPERS_PROFILE_H_

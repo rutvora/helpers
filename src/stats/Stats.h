@@ -2,8 +2,8 @@
 // Created by Rut Vora
 //
 
-#ifndef INTERCONNECT_SIDE_CHANNELS_HELPERS_STATS_H_
-#define INTERCONNECT_SIDE_CHANNELS_HELPERS_STATS_H_
+#ifndef HELPERS_STATS_H_
+#define HELPERS_STATS_H_
 
 #include <cstdint>
 #include <nlohmann/json.hpp>
@@ -113,4 +113,4 @@ class Stats {
 
 #include "Stats.tpp"
 
-#endif //INTERCONNECT_SIDE_CHANNELS_HELPERS_STATS_H_
+#endif //HELPERS_STATS_H_
