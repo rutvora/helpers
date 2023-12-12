@@ -2,8 +2,8 @@
 // Created by rutvora on 12/11/23.
 //
 
-#ifndef INTERCONNECT_SIDE_CHANNELS_SRC_HELPERS_CHANNEL_H_
-#define INTERCONNECT_SIDE_CHANNELS_SRC_HELPERS_CHANNEL_H_
+#ifndef HELPERS_CHANNEL_H_
+#define HELPERS_CHANNEL_H_
 
 #include <queue>
 #include <mutex>
@@ -31,4 +31,4 @@ class Channel {
 
 };
 #include "Channel.tpp"
-#endif //INTERCONNECT_SIDE_CHANNELS_SRC_HELPERS_CHANNEL_H_
+#endif //HELPERS_CHANNEL_H_

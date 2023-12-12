@@ -2,8 +2,15 @@
 // Created by rutvora on 11/1/23.
 //
 
-#ifndef INTERCONNECT_SIDE_CHANNELS_HELPERS_GLOBAL_H_
-#define INTERCONNECT_SIDE_CHANNELS_HELPERS_GLOBAL_H_
+// Include all files
+#include "Channel.h"
+#include "CPU.h"
+#include "Logging.h"
+#include "Profile.h"
+#include "Stats.h"
+
+#ifndef HELPERS_GLOBAL_H_
+#define HELPERS_GLOBAL_H_
 
 template<typename Type>
 std::ostream &operator<<(std::ostream &os, const std::vector<Type> &vec) {
@@ -23,4 +30,4 @@ std::ostream &operator<<(std::ostream &os, const std::vector<Type> &vec) {
   return os;
 }
 
-#endif //INTERCONNECT_SIDE_CHANNELS_HELPERS_GLOBAL_H_
+#endif //HELPERS_GLOBAL_H_

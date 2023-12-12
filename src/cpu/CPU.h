@@ -2,8 +2,8 @@
 // Created by rutvora on 11/1/23.
 //
 
-#ifndef INTERCONNECT_SIDE_CHANNELS_HELPERS_CPU_H_
-#define INTERCONNECT_SIDE_CHANNELS_HELPERS_CPU_H_
+#ifndef HELPERS_CPU_H_
+#define HELPERS_CPU_H_
 
 #include <vector>
 #include <cstdint>
@@ -22,4 +22,4 @@ bool setCPUAffinity(std::vector<uint8_t> &cpus);
 void moveToCSetShield();
 }
 
-#endif //INTERCONNECT_SIDE_CHANNELS_HELPERS_CPU_H_
+#endif //HELPERS_CPU_H_

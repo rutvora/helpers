@@ -2,8 +2,8 @@
 // Created by rutvora on 10/30/23.
 //
 
-#ifndef INTERCONNECT_SIDE_CHANNELS_CONFIG_H
-#define INTERCONNECT_SIDE_CHANNELS_CONFIG_H
+#ifndef HELPERS_CONFIG_H
+#define HELPERS_CONFIG_H
 
 #include <nlohmann/json.hpp>
 #include "log/Logging.h"
@@ -39,4 +39,4 @@ struct Config {
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Config, logLevel, resultsFile, isolatedCores)
 }
-#endif //INTERCONNECT_SIDE_CHANNELS_CONFIG_H
+#endif //HELPERS_CONFIG_H

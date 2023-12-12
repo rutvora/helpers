@@ -2,8 +2,8 @@
 // Created by Rut Vora
 //
 
-#ifndef INTERCONNECT_SIDE_CHANNELS_HELPERS_LOGGING_H_
-#define INTERCONNECT_SIDE_CHANNELS_HELPERS_LOGGING_H_
+#ifndef HELPERS_LOGGING_H_
+#define HELPERS_LOGGING_H_
 
 #include <mutex>
 #include <string>
@@ -66,4 +66,4 @@ class Logging {
   }
 };
 
-#endif //INTERCONNECT_SIDE_CHANNELS_HELPERS_LOGGING_H_
+#endif //HELPERS_LOGGING_H_
