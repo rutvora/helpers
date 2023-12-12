@@ -3,11 +3,11 @@
 //
 
 // Include all files
-#include "Channel.h"
-#include "CPU.h"
-#include "Logging.h"
-#include "Profile.h"
-#include "Stats.h"
+#include "channel/Channel.h"
+#include "cpu/CPU.h"
+#include "log/Logging.h"
+#include "profile/Profile.h"
+#include "stats/Stats.h"
 
 #ifndef HELPERS_GLOBAL_H_
 #define HELPERS_GLOBAL_H_
