@@ -17,7 +17,8 @@ concept Number = std::is_arithmetic_v<T>;
 template<Number T>
 class Stats {
  public:
-  std::atomic<double> avg{0}, stdev{0}, min{std::numeric_limits<T>::max()}, max{std::numeric_limits<T>::lowest()};
+  std::atomic<double> avg{0}, stdev{0};
+  std::atomic<T> min{std::numeric_limits<T>::max()}, max{std::numeric_limits<T>::lowest()};
   /**
  * Function to write the relevant variables of this class to a json object
  * @param j The json object to write

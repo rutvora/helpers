@@ -5,7 +5,7 @@
 #include <sstream>
 #include "CPU.h"
 #include "log/Logging.h"
-#include "global.h"
+#include "helper.h"
 
 namespace CPU {
 bool setCPUAffinity(std::vector<uint8_t> &cpus) {

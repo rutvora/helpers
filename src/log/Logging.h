@@ -12,7 +12,6 @@
 #include <nlohmann/json.hpp>
 #include <fstream>
 
-
 class Logging {
  public:
 /**
@@ -22,12 +21,6 @@ class Logging {
   enum LOGLEVEL {
     ERROR, WARN, DEBUG
   };
-
-  NLOHMANN_JSON_SERIALIZE_ENUM(Logging::LOGLEVEL, {
-    { Logging::DEBUG, "DEBUG" },
-    { Logging::WARN, "WARN" },
-    { Logging::ERROR, "ERROR" },
-  })
 
   explicit Logging(LOGLEVEL logLevel, const std::string& outputFile = "") : logLevel(logLevel) {
     if (!outputFile.empty()) {
@@ -65,5 +58,11 @@ class Logging {
     return "Unknown";
   }
 };
+
+NLOHMANN_JSON_SERIALIZE_ENUM(Logging::LOGLEVEL, {
+  { Logging::DEBUG, "DEBUG" },
+  { Logging::WARN, "WARN" },
+  { Logging::ERROR, "ERROR" },
+})
 
 #endif //HELPERS_LOGGING_H_
