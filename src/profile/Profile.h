@@ -59,14 +59,14 @@ inline auto timer() {
  */
 template<typename ReturnType, typename Func, typename... Args>
 requires validFunctionWithRet<ReturnType, Func, Args...>
-std::pair<uint64_t, ReturnType> profile(Func &function, Args &... args);
+std::pair<uint64_t, ReturnType> profile(const Func &function, Args &... args);
 
 /**
  * Special case of the above function, when the function to profile does not return anything
  */
 template<typename Func, typename... Args>
 requires validFunctionWithoutRet<Func, Args...>
-uint64_t profile(Func &function, Args &... args);
+uint64_t profile(const Func &function, Args &... args);
 
 };
 

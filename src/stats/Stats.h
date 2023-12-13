@@ -10,6 +10,7 @@
 #include <mutex>
 #include <atomic>
 #include <chrono>
+#include <utility>
 
 template<typename T>
 concept Number = std::is_arithmetic_v<T>;
@@ -69,7 +70,7 @@ class Stats {
    * @param storeVals Whether to store the values or not
    * @param expectedEntries Pre-allocate a vector with these many entries to store the values
    */
-  explicit Stats(std::string &unit, uint64_t ignoreInitial = 0, bool storeVals = false, uint64_t expectedEntries = 1e3)
+  explicit Stats(std::string unit, const uint64_t ignoreInitial = 0, const bool storeVals = false, const uint64_t expectedEntries = 1e3)
       : unit(std::move(unit)), ignoreInitial(ignoreInitial), ignoreRemaining(ignoreInitial), storeVals(storeVals) {
     timeStamps.reserve(expectedEntries);
     if (storeVals) values.reserve(expectedEntries);

@@ -14,7 +14,7 @@ namespace CPU {
  * @param cpus The list of processors to set the CPU affinity to
  * @return Whether setting the CPU affinity was successful
  */
-bool setCPUAffinity(std::vector<uint8_t> &cpus);
+bool setCPUAffinity(const std::vector<uint8_t> &cpus);
 
 /**
  * Move the process to the CSet Shield set up (Refer to main README for more details)

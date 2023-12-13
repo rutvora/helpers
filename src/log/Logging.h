@@ -35,7 +35,7 @@ class Logging {
  * @param identifier The invoker (who invokes this log function)
  * @param message The message to be logged
  */
-  void log(LOGLEVEL level, const std::string &identifier, const std::string &message);
+  void log(const LOGLEVEL &level, const std::string &identifier, const std::string &message);
 
  private:
   LOGLEVEL logLevel;
@@ -49,7 +49,7 @@ class Logging {
  * @param level The log level to get the string of
  * @return The string corresponding to the log level
  */
-  static inline std::string getLevelString(LOGLEVEL level) {
+  static inline std::string getLevelString(const LOGLEVEL &level) {
     switch (level) {
       case LOG_LEVEL_ERROR:return "ERROR";
       case LOG_LEVEL_WARN:return "WARNING";

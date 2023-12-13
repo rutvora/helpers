@@ -8,7 +8,7 @@
 #include "helper.h"
 
 namespace CPU {
-bool setCPUAffinity(std::vector<uint8_t> &cpus) {
+bool setCPUAffinity(const std::vector<uint8_t> &cpus) {
   if (cpus.empty()) return true;
   cpu_set_t mask;
   CPU_ZERO(&mask);

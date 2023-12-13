@@ -6,7 +6,7 @@
 #include "Stats.h"
 
 template<Number T>
-void Stats<T>::update(T val) {
+void Stats<T>::update(const T val) {
   if (ignoreRemaining > 0) {
     --ignoreRemaining;
     return;

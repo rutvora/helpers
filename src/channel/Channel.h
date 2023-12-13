@@ -26,8 +26,8 @@ class Channel {
   std::condition_variable notEmpty;
   std::condition_variable notFull;
 
-  void send(T data);
-  T receive();
+  void send(const T &data);
+  T &receive();
 
 };
 #include "Channel.tpp"
