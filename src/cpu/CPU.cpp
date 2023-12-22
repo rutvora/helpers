@@ -5,7 +5,7 @@
 #include <sstream>
 #include "CPU.h"
 #include "log/Logging.h"
-#include "helper.h"
+#include "printers.h"
 
 extern Logging *logging;  // Defined in main.cu
 

@@ -17,6 +17,13 @@
 #include "x86intrin.h"
 #endif
 
+#define TIMER_RDTSCP 1
+#define TIMER_STEADY_CLOCK 2
+#define TIMER_HIGH_RES_CLOCK 3
+
+#ifndef PROFILE_TIMER
+#define PROFILE_TIMER TIMER_STEADY_CLOCK
+#endif
 
 namespace Profile {
 // Validate that the function pointer is valid and returns the necessary type
@@ -44,10 +51,15 @@ concept validFunctionWithoutRet = requires(Func &function, Args &... args) {
   return __rdtscp(&auxInfo);
 }
 
-// Current Timer
-inline auto timer() {
-  return timerSteadyClock();
-}
+#if PROFILE_TIMER == TIMER_RDTSCP
+constexpr auto timer = timerRdtscp;
+#elif PROFILE_TIMER == TIMER_STEADY_CLOCK
+constexpr auto timer = timerSteadyClock;
+#elif PROFILE_TIMER == TIMER_HIGH_RES_CLOCK
+constexpr auto timer = timerHighResClock;
+#else
+#error "Invalid timer specified"
+#endif
 
 /**
  *

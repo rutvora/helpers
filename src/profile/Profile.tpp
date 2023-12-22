@@ -10,7 +10,11 @@ std::pair<uint64_t, ReturnType> Profile::profile(const Func &function, Args &...
   auto start = timer();
   auto output = function(args...);
   auto end = timer();
+#if PROFILE_TIMER == TIMER_STEADY_CLOCK || PROFILE_TIMER == TIMER_HIGH_RES_CLOCK
   return {(end - start).count(), output};
+#else
+  return {end - start, output};
+#endif
 }
 
 template<typename Func, typename... Args>
@@ -19,5 +23,9 @@ uint64_t Profile::profile(const Func &function, Args &... args) {
   auto start = timer();
   function(args...);
   auto end = timer();
+#if PROFILE_TIMER == TIMER_STEADY_CLOCK || PROFILE_TIMER == TIMER_HIGH_RES_CLOCK
   return (end - start).count();
+#else
+  return end - start;
+#endif
 }

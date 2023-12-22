@@ -107,15 +107,22 @@ log.log(Logging::DEBUG, "identifier", "message"); // This won't print to file.lo
 
 This template allows you to supply any function to profile (get the runtime of)
 Usage:
+Currently, the default timer used is `std::chrono::steady_clock`. However, `high_resolution_clock` and `rdtscp`
+are available. You can change the default timer by defining PROFILE_TIMER as one of: TIMER_RDTSCP, TIMER_STEADY_CLOCK,
+TIMER_HIGH_RES_CLOCK
 
 ```c++
+// Define the timer (defaults to std::chrono::steady_clock if undefined)
+#define PROFILE_TIMER TIMER_RDTSCP  
+
+// For functions with a return value
 auto result = Profile::profile<ReturnType>(Function func, Args... args);
 result.first; // Time taken to run this
 result.second; // The output from the function
-```
 
-_Note: Currently, the default timer used is `std::chrono::steady_clock`. However, `high_resolution_clock` and `rdtscp`
-are available. You can change the default timer() function in Profile.h if need be_
+// For functions without a return value
+auto result = Profile::profile(Function func, Args... args);
+```
 
 ## Stats
 
