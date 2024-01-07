@@ -38,6 +38,7 @@ inline std::ostream &operator<<(std::ostream &os, const std::unordered_map<Key, 
     return os;
   }
   for (auto [key, value] : map) {
+    os << "\"";
     printValue(os, key);
     os << "\": ";
     printValue(os, value);
@@ -56,6 +57,7 @@ inline std::ostream &operator<<(std::ostream &os, const std::map<Key, Tp> &map) 
     return os;
   }
   for (auto [key, value] : map) {
+    os << "\"";
     printValue(os, key);
     os << "\": ";
     printValue(os, value);
