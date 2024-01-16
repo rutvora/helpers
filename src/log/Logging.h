@@ -11,6 +11,7 @@
 #include <chrono>
 #include <nlohmann/json.hpp>
 #include <fstream>
+#include <source_location>
 
 class Logging {
  public:
@@ -35,7 +36,8 @@ class Logging {
  * @param identifier The invoker (who invokes this log function)
  * @param message The message to be logged
  */
-  void log(const LOGLEVEL &level, const std::string &identifier, const std::string &message);
+  void log(const LOGLEVEL &level, const std::string &message, const std::string& identifier = "",
+           std::source_location location = std::source_location::current());
 
  private:
   LOGLEVEL logLevel;

@@ -32,7 +32,7 @@ void moveToCSetShield() {
   command << "cset shield --shield --pid " << getpid() << "> /dev/null 2>&1";
   if (system(command.str().c_str()) != 0) {
     if (logging != nullptr)
-      logging->log(Logging::ERROR, "CSet shield", "Could not move process to shielded group of cores");
+      logging->log(Logging::ERROR, "Could not move process to shielded group of cores");
     else
       std::cerr << "Could not move process to shielded group of cores" << std::endl;
   }
