@@ -17,12 +17,30 @@
 #include "x86intrin.h"
 #endif
 
+#define TIMER_FEATURE_OFF 0
+#define TIMER_FEATURE_ON 1
+
+// Timers
 #define TIMER_RDTSCP 1
 #define TIMER_STEADY_CLOCK 2
 #define TIMER_HIGH_RES_CLOCK 3
+#define TIMER_RDTSC 4
+#define TIMER_RDPRU 5
+
+// Timer Features
+#ifndef TIMER_32_BIT
+#define TIMER_32_BIT TIMER_FEATURE_OFF
+#endif
+
+#ifndef TIMER_MEM_FENCE
+#define TIMER_MEM_FENCE TIMER_FEATURE_ON
+#endif
+
+// Timer specific variables (do not change)
+#define RDPRU_ECX_APERF    1          /* Use APERF register in RDRPU */
 
 #ifndef PROFILE_TIMER
-#define PROFILE_TIMER TIMER_STEADY_CLOCK
+#define PROFILE_TIMER TIMER_RDTSCP
 #endif
 
 namespace Profile {
@@ -39,16 +57,74 @@ concept validFunctionWithoutRet = requires(Func &function, Args &... args) {
 
 // Timers
 [[maybe_unused]] inline auto timerSteadyClock() {
+#if TIMER_MEM_FENCE == TIMER_FEATURE_ON
+  _mm_mfence();
+#endif
   return std::chrono::steady_clock::now();
 }
 
 [[maybe_unused]] inline auto timerHighResClock() {
+#if TIMER_MEM_FENCE == TIMER_FEATURE_ON
+  _mm_mfence();
+#endif
   return std::chrono::high_resolution_clock::now();
 }
 
 [[maybe_unused]] inline auto timerRdtscp() {
-  unsigned int auxInfo{};
-  return __rdtscp(&auxInfo);
+  uint32_t low = 0, high = 0;
+  asm volatile(
+      "rdtscp\n"
+      : "=a" (low)
+#if TIMER_32_BIT != TIMER_FEATURE_ON
+      , "=d" (high)
+#endif
+      :
+      : "ecx" // CPUID, which we want to ignore
+      );
+
+#if TIMER_32_BIT == TIMER_FEATURE_ON
+  return low;
+#else
+  return ((uint64_t)high << 32) | low;
+#endif
+}
+
+[[maybe_unused]] inline auto timerRdtsc() {
+  uint32_t low = 0, high = 0;
+#if TIMER_MEM_FENCE == TIMER_FEATURE_ON
+  _mm_mfence();
+#endif
+  asm volatile("rdtsc\n"
+               : "=a"(low)
+#if TIMER_32_BIT != TIMER_FEATURE_ON
+               , "=d"(high)
+#endif
+               );
+#if TIMER_32_BIT == TIMER_FEATURE_ON
+  return low;
+#else
+  return ((uint64_t)high << 32) | low;
+#endif
+}
+
+[[maybe_unused]] inline auto timerRdpru() {
+  uint32_t low = 0, high = 0;
+#if TIMER_MEM_FENCE == TIMER_FEATURE_ON
+  _mm_mfence();
+#endif
+  asm volatile(
+      "rdpru\n"
+      : "=a"(low)
+#if TIMER_32_BIT != TIMER_FEATURE_ON
+      , "=d"(high)
+#endif
+      : "c"(RDPRU_ECX_APERF)
+      );
+#if TIMER_32_BIT == TIMER_FEATURE_ON
+  return low;
+#else
+  return ((low) | (uint64_t) (high) << 32);
+#endif
 }
 
 #if PROFILE_TIMER == TIMER_RDTSCP
@@ -57,6 +133,10 @@ constexpr auto timer = timerRdtscp;
 constexpr auto timer = timerSteadyClock;
 #elif PROFILE_TIMER == TIMER_HIGH_RES_CLOCK
 constexpr auto timer = timerHighResClock;
+#elif PROFILE_TIMER == TIMER_RDTSC
+constexpr auto timer = timerRdtsc;
+#elif PROFILE_TIMER == TIMER_RDPRU
+constexpr auto timer = timerRdpru;
 #else
 #error "Invalid timer specified"
 #endif

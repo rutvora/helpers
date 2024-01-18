@@ -98,22 +98,29 @@ This class helps you log the output to the specified file (defaults to stderr)
 Usage:
 
 ```c++
-Logging log{Logging::WARN, "file.log"}; // Print all warnings or errors, but not debug messages
-log.log(Logging::ERROR, "identifier", "message"); // This will print to file.log
-log.log(Logging::DEBUG, "identifier", "message"); // This won't print to file.log
+Logging log{Logging::WARN, "file.log"}; // Print all warnings or errors, but not debug messages to file.log
+// Logging log{Logging::WARN}; // Print all warnings or errors, but not debug messages to stderr
+log.log(Logging::ERROR, "message", "identifier"); // This will print to file.log
+log.log(Logging::ERROR, "message");               // This will print to file.log (no identifier string)
+log.log(Logging::DEBUG, "message", "identifier"); // This will NOT print to file.log
+```
+
+The output would be of the form:
+
+```
+file_name:line_num [time_from_log_init: error_level] identifier message
 ```
 
 ## Profile
 
 This template allows you to supply any function to profile (get the runtime of)
-Usage:
-Currently, the default timer used is `std::chrono::steady_clock`. However, `high_resolution_clock` and `rdtscp`
-are available. You can change the default timer by defining PROFILE_TIMER as one of: TIMER_RDTSCP, TIMER_STEADY_CLOCK,
-TIMER_HIGH_RES_CLOCK
+
+**Usage:**
 
 ```c++
-// Define the timer (defaults to std::chrono::steady_clock if undefined)
-#define PROFILE_TIMER TIMER_RDTSCP  
+// Define the timer (defaults to TIMER_RDTSCP if undefined)
+#define
+PROFILE_TIMER TIMER_RDTSCP  // See below for available timers
 
 // For functions with a return value
 auto result = Profile::profile<ReturnType>(Function func, Args... args);
@@ -123,6 +130,51 @@ result.second; // The output from the function
 // For functions without a return value
 auto result = Profile::profile(Function func, Args... args);
 ```
+
+The following timers are available:
+
+1. **TIMER_RDTSCP**:
+   This is the DEFAULT timer. It uses the RDTSCP instruction available on x86 (or x86_64) processors.  
+   RDTSCP (and RDTSC) rely on the TSC (Time Stamp Counter) register, which is incremented at a constant rate.
+   However, if your CPU core is not at a fixed frequency (see the CPU section on how to fix it), RDTSC(P)
+   results might fluctuate.  
+   RDTSCP issues a serialising instruction to ensure that all memory operations before RDTSCP are executed before RDTSCP
+   is triggered (which is not always the case on processors with out-of-order execution, which is all processors
+   today)
+
+_Note: ISSUES WITH AMD: AMD seems to increment the counter at a constant rate of the crystal clock frequency (usually
+100MHz), but by a value dependend on the processor's base frequency (check processor specifications on the AMD
+website for this information). So, for example, the AMD Ryzen 4800HS has a base clock of 2.9GHz, so all values read
+by RDTSC(P) will be a multiple of 29!
+
+2. **TIMER_RDTSC**:
+   This timer is similar to RDTSC and has all of its benefits and losses, except that RDTSC does not ensure
+   serialisation that RDTSCP does.
+3. **TIMER_RDPRU**:
+   This timer uses the RDPRU instruction avaliable on AMD hardware ONLY. RDPRU allows user-space programs to read the
+   exact processor cycle count. As such, it does not have the issue that RDTSC(P) has on AMD processors. In addition, if
+   you are measuring real cycle counts, this helps avoid setting the CPU core frequency (which requires root access).
+4. **TIMER_STEADY_CLOCK**
+   This timer is the `std::chrono::steady_clock::now()`
+5. **TIMER_HIGH_RES_CLOCK**
+   This timer is the `std::chrono::high_resolution_clock::now()`
+
+### Features
+
+Certain timers support certain additional features which can be turned on or off at compile time. All timers can be
+switched on (or off) using the value `TIMER_FEATURE_ON` (or `TIMER_FEATURE_OFF`)
+
+```c++
+TIMER_32_BIT TIMER_FEATURE_ON // Makes the timer 32-bit only
+```
+
+- **TIMER_32_BIT**: (DEFAULT = OFF, Applicable to RDTSC, RDTSCP, RDPRU) - Only read the lower 32 bits of the timer (avoids at least 1
+  extra CPU cycle by ignoring the higher bits). This is useful if you are only measuring timing difference, and the
+  difference won't exceed 32 bits.  
+  _Note: This can have an issue when the actual output from the timer instruction wraps around the lower 32 bits.
+  However, this would happen rarely, and external code can be designed to handle this anomaly_
+- **TIMER_MEM_FENCE**: (DEFAULT = ON, Applicable to RDTSC, RDPRU, STEADY_CLOCK, HIGH_RES_CLOCK) - Issue an MFENCE before the timer, to
+  make sure that all memory operations are completed before the timer is read.
 
 ## Stats
 
