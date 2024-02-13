@@ -161,29 +161,28 @@ by RDTSC(P) will be a multiple of 29!
 
 ### Features
 
-Certain timers support certain additional features which can be turned on or off at compile time. All timers can be
-switched on (or off) using the value `TIMER_FEATURE_ON` (or `TIMER_FEATURE_OFF`)
+Certain timers support certain additional features which can be turned on or off at compile time. All timer features
+can be switched on (or off) using the value `TIMER_FEATURE_ON` (or `TIMER_FEATURE_OFF`)
 
 ```c++
 TIMER_32_BIT TIMER_FEATURE_ON // Makes the timer 32-bit only
 ```
 
-- **TIMER_32_BIT**: (DEFAULT = OFF, Applicable to RDTSC, RDTSCP, RDPRU) - Only read the lower 32 bits of the timer (avoids at least 1
-  extra CPU cycle by ignoring the higher bits). This is useful if you are only measuring timing difference, and the
-  difference won't exceed 32 bits.  
+- **TIMER_32_BIT**: (DEFAULT = OFF, Applicable to RDTSC, RDTSCP, RDPRU) - Only read the lower 32 bits of the timer
+  (avoids at least 1 extra CPU cycle by ignoring the higher bits). This is useful if you are only measuring timing
+  difference, and the difference won't exceed 32 bits.  
   _Note: This can have an issue when the actual output from the timer instruction wraps around the lower 32 bits.
   However, this would happen rarely, and external code can be designed to handle this anomaly_
-- **TIMER_MEM_FENCE**: (DEFAULT = ON, Applicable to RDTSC, RDPRU, STEADY_CLOCK, HIGH_RES_CLOCK) - Issue an MFENCE before the timer, to
-  make sure that all memory operations are completed before the timer is read.
+- **TIMER_MEM_FENCE**: (DEFAULT = ON, Applicable to RDTSC, RDPRU, STEADY_CLOCK, HIGH_RES_CLOCK) - Issue an MFENCE before
+  the timer, to make sure that all memory operations are completed before the timer is read.
 
 ## Stats
 
-This class instance can be used to record the statistics of any numeric data type.
-Currently supported statistics are: Avg, Stdev, Min and Max (and their indices).
-They also record the total number of inputs, and optionally store all the inputs.
-You can also choose to ignore the initial 'n' entries (warm-up phase of your code)
+This class instance can be used to record the statistics of any numeric data type. Currently supported statistics are: 
+Avg, Stdev, Min and Max (and their indices). They also record the total number of inputs, and optionally store all the 
+inputs. You can also choose to ignore the initial 'n' entries (warm-up phase of your code)
 
-Usage
+Usage:
 
 ```c++
 Stats<int> stats{"nanoseconds", 1e2, true, 1e7}; // Unit: "nanoseconds", "ignoreInitial": 100, "storeVals": true, "expectedVals": 1e7
