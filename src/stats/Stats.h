@@ -11,6 +11,7 @@
 #include <atomic>
 #include <chrono>
 #include <utility>
+#include <set>
 
 template<typename T>
 concept Number = std::is_arithmetic_v<T>;
@@ -18,6 +19,14 @@ concept Number = std::is_arithmetic_v<T>;
 template<Number T>
 class Stats {
  public:
+  struct Value {
+    T val;
+    uint64_t timeStamp;
+    bool operator<(const Value &rhs) const {
+      return val < rhs.val;
+    }
+  };
+
   std::atomic<double> avg{0}, stdev{0};
   std::atomic<T> min{std::numeric_limits<T>::max()}, max{std::numeric_limits<T>::lowest()};
   /**
@@ -27,32 +36,69 @@ class Stats {
  */
   [[maybe_unused]]
   friend void to_json(nlohmann::ordered_json &j, const Stats<T> &stats) {
+    // Calculate the median
+    double median = nanf64("Store vals is false");
+    if (stats.storeVals) {
+      // Update Median
+      auto middleElem = std::next(stats.values.begin(), stats.values.size() / 2);
+      if (stats.values.size() % 2 == 0) {
+        median = ((*middleElem).val + (*std::prev(middleElem)).val) / 2;
+      } else {
+        median = (*middleElem).val;
+      }
+    }
     j = {
         {"unit", stats.unit},
         {"avg", stats.avg.load()},
         {"stdev", stats.stdev.load()},
+        {"median", median},
         {"min", stats.min.load()},
         {"minIdx", stats.minIdx.load()},
         {"max", stats.max.load()},
         {"maxIdx", stats.maxIdx.load()},
         {"count", stats.count.load()},
         {"values", stats.values},
-        {"timeStamps", stats.timeStamps}
     };
   };
   [[maybe_unused]]
   friend void to_json(nlohmann::json &j, const Stats<T> &stats) {
+
+    // Calculate the median
+    double median = nanf64("Store vals is false");
+    if (stats.storeVals) {
+      // Update Median
+      auto middleElem = std::next(stats.values.begin(), stats.values.size() / 2);
+      if (stats.values.size() % 2 == 0) {
+        median = ((*middleElem).val + (*std::prev(middleElem)).val) / 2;
+      } else {
+        median = (*middleElem).val;
+      }
+    }
     j = {
         {"unit", stats.unit},
         {"avg", stats.avg.load()},
         {"stdev", stats.stdev.load()},
+        {"median", median},
         {"min", stats.min.load()},
         {"minIdx", stats.minIdx.load()},
         {"max", stats.max.load()},
         {"maxIdx", stats.maxIdx.load()},
         {"count", stats.count.load()},
         {"values", stats.values},
-        {"timeStamps", stats.timeStamps}
+    };
+  };
+
+  friend void to_json(nlohmann::json &j, const Stats<T>::Value &value) {
+    j = {
+        {"value", value.val},
+        {"timeStamp", value.timeStamp},
+    };
+  };
+
+  friend void to_json(nlohmann::ordered_json &j, const Stats<T>::Value &value) {
+    j = {
+        {"value", value.val},
+        {"timeStamp", value.timeStamp},
     };
   };
 
@@ -72,8 +118,6 @@ class Stats {
    */
   explicit Stats(std::string unit, const uint64_t ignoreInitial = 0, const bool storeVals = false, const uint64_t expectedEntries = 1e3)
       : unit(std::move(unit)), ignoreInitial(ignoreInitial), ignoreRemaining(ignoreInitial), storeVals(storeVals) {
-    timeStamps.reserve(expectedEntries);
-    if (storeVals) values.reserve(expectedEntries);
   }
 
   /**
@@ -102,15 +146,16 @@ class Stats {
   }
 
  private:
+
+  std::multiset<Value> values{};
+
   std::atomic<double> M2{0};
   std::atomic<uint64_t> minIdx{0}, maxIdx{0}, count{0};
   std::string unit;
   uint64_t ignoreInitial{0};
   uint64_t ignoreRemaining{0};
   bool storeVals{false};
-  std::vector<uint64_t> values{};
   std::chrono::time_point<std::chrono::steady_clock> startTime = std::chrono::steady_clock::now();
-  std::vector<uint64_t> timeStamps{};
 };
 
 #include "Stats.tpp"
