@@ -17,13 +17,4 @@
 #define TIMER_RDTSC 4
 #define TIMER_RDPRU 5
 
-// Timer Features
-#ifndef TIMER_32_BIT
-#define TIMER_32_BIT TIMER_FEATURE_OFF
-#endif
-
-#ifndef TIMER_MEM_FENCE
-#define TIMER_MEM_FENCE TIMER_FEATURE_ON
-#endif
-
 #endif
