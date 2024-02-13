@@ -72,6 +72,9 @@ concept validFunctionWithoutRet = requires(Func &function, Args &... args) {
 #endif
       :
       : "ecx" // CPUID, which we want to ignore
+#if TIMER_32_BIT == TIMER_FEATURE_ON
+      , "edx"
+#endif
       );
 
 #if TIMER_32_BIT == TIMER_FEATURE_ON
@@ -90,6 +93,9 @@ concept validFunctionWithoutRet = requires(Func &function, Args &... args) {
                : "=a"(low)
 #if TIMER_32_BIT != TIMER_FEATURE_ON
                , "=d"(high)
+#else
+               :
+               : "edx"
 #endif
                );
 #if TIMER_32_BIT == TIMER_FEATURE_ON
@@ -111,6 +117,9 @@ concept validFunctionWithoutRet = requires(Func &function, Args &... args) {
       , "=d"(high)
 #endif
       : "c"(RDPRU_ECX_APERF)
+#if TIMER_32_BIT == TIMER_FEATURE_ON
+      : "edx"
+#endif
       );
 #if TIMER_32_BIT == TIMER_FEATURE_ON
   return low;
