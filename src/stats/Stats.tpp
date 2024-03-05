@@ -12,7 +12,7 @@ void Stats<T>::update(const T val) {
     return;
   }
   if (storeVals) {
-    values.insert({val, (std::chrono::steady_clock::now() - startTime).count()});
+    values.insert({val, static_cast<uint64_t>((std::chrono::steady_clock::now() - startTime).count())});
   }
   if (min > val) {
     min = val;

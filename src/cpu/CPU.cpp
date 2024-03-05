@@ -20,7 +20,11 @@ bool setCPUAffinity(const std::vector<uint8_t> &cpus) {
   auto result = sched_setaffinity(0, sizeof(mask), &mask);
   if (result == -1) {
     std::stringstream strStream;
-    std::cerr << "Could not set CPU affinity to " << cpus;
+    strStream << "Could not set CPU affinity to " << cpus << " (Error: " << strerror(errno) << ")";
+    if (logging != nullptr) {
+      logging->log(Logging::ERROR, strStream.str());
+    }
+    std::cerr << strStream.str() << std::endl;
     return false;
   }
   return true;
