@@ -24,8 +24,14 @@
 #define TIMER_32_BIT TIMER_FEATURE_OFF
 #endif
 
-#ifndef TIMER_MEM_FENCE
-#define TIMER_MEM_FENCE TIMER_FEATURE_ON
+#ifndef TIMER_FENCE
+#define TIMER_FENCE TIMER_FEATURE_ON
+#endif
+
+#if TIMER_FENCE == TIMER_FEATURE_ON
+#ifndef TIMER_FENCE_TYPE
+#define TIMER_FENCE_TYPE TIMER_SERIALIZE
+#endif
 #endif
 
 // Timer specific variables (do not change)
@@ -47,23 +53,26 @@ concept validFunctionWithoutRet = requires(Func &function, Args &... args) {
   { function(args...) };
 };
 
+// Serialising instruction
+[[maybe_unused]] [[clang::always_inline]] [[gnu::always_inline]]
+inline void _cpuid() {
+  asm volatile("cpuid" : : : "rax", "rbx", "rcx", "rdx");
+}
+
 // Timers
-[[maybe_unused]] inline auto timerSteadyClock() {
-#if TIMER_MEM_FENCE == TIMER_FEATURE_ON
-  _mm_mfence();
-#endif
+[[maybe_unused]] [[clang::always_inline]] [[gnu::always_inline]] [[gnu::flatten]]
+inline auto timerSteadyClock() {
   return std::chrono::steady_clock::now();
 }
 
-[[maybe_unused]] inline auto timerHighResClock() {
-#if TIMER_MEM_FENCE == TIMER_FEATURE_ON
-  _mm_mfence();
-#endif
+[[maybe_unused]] [[clang::always_inline]] [[gnu::always_inline]] [[gnu::flatten]]
+inline auto timerHighResClock() {
   return std::chrono::high_resolution_clock::now();
 }
 
-[[maybe_unused]] inline auto timerRdtscp() {
-  uint32_t low = 0, high = 0;
+[[maybe_unused]] [[clang::always_inline]] [[gnu::always_inline]]
+inline auto timerRdtscp() {
+  uint32_t low, high;
   asm volatile(
       "rdtscp\n"
       : "=a" (low)
@@ -84,11 +93,9 @@ concept validFunctionWithoutRet = requires(Func &function, Args &... args) {
 #endif
 }
 
-[[maybe_unused]] inline auto timerRdtsc() {
-  uint32_t low = 0, high = 0;
-#if TIMER_MEM_FENCE == TIMER_FEATURE_ON
-  _mm_mfence();
-#endif
+[[maybe_unused]] [[clang::always_inline]] [[gnu::always_inline]]
+inline auto timerRdtsc() {
+  uint32_t low, high;
   asm volatile("rdtsc\n"
                : "=a"(low)
 #if TIMER_32_BIT != TIMER_FEATURE_ON
@@ -105,11 +112,9 @@ concept validFunctionWithoutRet = requires(Func &function, Args &... args) {
 #endif
 }
 
-[[maybe_unused]] inline auto timerRdpru() {
-  uint32_t low = 0, high = 0;
-#if TIMER_MEM_FENCE == TIMER_FEATURE_ON
-  _mm_mfence();
-#endif
+[[maybe_unused]] [[clang::always_inline]] [[gnu::always_inline]]
+inline auto timerRdpru() {
+  uint32_t low, high;
   asm volatile(
       "rdpru\n"
       : "=a"(low)
@@ -127,20 +132,6 @@ concept validFunctionWithoutRet = requires(Func &function, Args &... args) {
   return ((low) | (uint64_t) (high) << 32);
 #endif
 }
-
-#if PROFILE_TIMER == TIMER_RDTSCP
-constexpr auto timer = timerRdtscp;
-#elif PROFILE_TIMER == TIMER_STEADY_CLOCK
-constexpr auto timer = timerSteadyClock;
-#elif PROFILE_TIMER == TIMER_HIGH_RES_CLOCK
-constexpr auto timer = timerHighResClock;
-#elif PROFILE_TIMER == TIMER_RDTSC
-constexpr auto timer = timerRdtsc;
-#elif PROFILE_TIMER == TIMER_RDPRU
-constexpr auto timer = timerRdpru;
-#else
-#error "Invalid timer specified"
-#endif
 
 /**
  *

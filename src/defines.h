@@ -11,10 +11,16 @@
 #define TIMER_FEATURE_ON 1
 
 // Timers
-#define TIMER_RDTSCP 1
-#define TIMER_STEADY_CLOCK 2
-#define TIMER_HIGH_RES_CLOCK 3
-#define TIMER_RDTSC 4
-#define TIMER_RDPRU 5
+#define TIMER_RDTSCP timerRdtscp
+#define TIMER_STEADY_CLOCK timerSteadyClock
+#define TIMER_HIGH_RES_CLOCK timerHighResClock
+#define TIMER_RDTSC timerRdtsc
+#define TIMER_RDPRU timerRdpru
+
+// Fences
+#define TIMER_SERIALIZE _cpuid // _serialize is better alternative (intrinsic) that can be used (only available on Intel 12th Gen and later)
+#define TIMER_LFENCE _mm_lfence
+#define TIMER_MFENCE _mm_mfence
+#define TIMER_SFENCE _mm_sfence
 
 #endif

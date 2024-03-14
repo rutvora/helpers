@@ -173,13 +173,26 @@ TIMER_32_BIT TIMER_FEATURE_ON // Makes the timer 32-bit only
   difference, and the difference won't exceed 32 bits.  
   _Note: This can have an issue when the actual output from the timer instruction wraps around the lower 32 bits.
   However, this would happen rarely, and external code can be designed to handle this anomaly_
-- **TIMER_MEM_FENCE**: (DEFAULT = ON, Applicable to RDTSC, RDPRU, STEADY_CLOCK, HIGH_RES_CLOCK) - Issue an MFENCE before
-  the timer, to make sure that all memory operations are completed before the timer is read.
+- **TIMER_FENCE**: (DEFAULT = ON, Applicable to RDTSC, RDPRU, STEADY_CLOCK, HIGH_RES_CLOCK) - Issue a FENCE before
+  the timer. The type of fence is defined by `TIMER_FENCE_TYPE`.
+- **TIMER_FENCE_TYPE**: (DEFAULT = `TIMER_SERIALIZE`). The following values are currently accepted:
+    - **TIMER_SERIALIZE**: Uses the [`CPUID`](https://www.felixcloutier.com/x86/cpuid) instruction to ensure
+      that all previous instructions finish executing and all loads/stores are complete.   
+      _Note: A better instruction [`SERIALIZE`](https://www.felixcloutier.com/x86/serialize) is available on Intel
+      processors from 12th gen onwards, and can be used by replacing the definition with `_serialize` (which is already
+      an intrinsic)_
+        - **TIMER_MFENCE**: Uses the [`MFENCE`](https://www.felixcloutier.com/x86/mfence) instruction to ensure all
+          previous
+          loads and stores are complete
+    - **TIMER_SFENCE**: Uses the [`SFENCE`](https://www.felixcloutier.com/x86/sfence) instruction to ensure all previous
+      stores are complete (loads may remain incomplete)
+    - **TIMER_LFENCE**: Uses the [`LFENCE`](https://www.felixcloutier.com/x86/lfence) instruction to ensure all previous
+      loads are complete (stores may remain incomplete)
 
 ## Stats
 
-This class instance can be used to record the statistics of any numeric data type. Currently supported statistics are: 
-Avg, Stdev, Min and Max (and their indices). They also record the total number of inputs, and optionally store all the 
+This class instance can be used to record the statistics of any numeric data type. Currently supported statistics are:
+Avg, Stdev, Min and Max (and their indices). They also record the total number of inputs, and optionally store all the
 inputs. You can also choose to ignore the initial 'n' entries (warm-up phase of your code)
 
 Usage:
