@@ -3,9 +3,7 @@
 //
 
 #include <sstream>
-#include "CPU.h"
-#include "log/Logging.h"
-#include "printers.h"
+#include "include.h"
 
 extern Logging *logging;  // Defined in main.cu
 
@@ -24,7 +22,7 @@ bool setCPUAffinity(const std::vector<uint8_t> &cpus) {
     if (logging != nullptr) {
       logging->log(Logging::ERROR, strStream.str());
     }
-    std::cerr << strStream.str() << std::endl;
+    else std::cerr << strStream.str() << std::endl;
     return false;
   }
   return true;
@@ -33,8 +31,10 @@ bool setCPUAffinity(const std::vector<uint8_t> &cpus) {
 void moveToCSetShield() {
   // Move this process inside the shielded group of cores
   std::stringstream command;
-  command << "cset shield --shield --pid " << getpid() << "> /dev/null 2>&1";
-  if (system(command.str().c_str()) != 0) {
+  command << "cset shield --shield --pid " << getpid() << " 2>&1";
+  std::string cmd = command.str();
+  auto out = Sys::run(cmd);
+  if (out.contains("tasks are not movable, impossible to move")) {
     if (logging != nullptr)
       logging->log(Logging::ERROR, "Could not move process to shielded group of cores");
     else
