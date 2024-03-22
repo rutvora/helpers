@@ -16,6 +16,7 @@
 #define TIMER_HIGH_RES_CLOCK timerHighResClock
 #define TIMER_RDTSC timerRdtsc
 #define TIMER_RDPRU timerRdpru
+#define TIMER_ARMV8 timerArmV8
 
 // Fences
 #define TIMER_SERIALIZE _cpuid // _serialize is better alternative (intrinsic) that can be used (only available on Intel 12th Gen and later)

@@ -133,6 +133,12 @@ inline auto timerRdpru() {
 #endif
 }
 
+[[maybe_unused]] [[clang::always_inline]] [[gnu::always_inline]]
+inline auto timerArmV8() {
+  uint64_t val;
+  asm volatile("mrs %0, cntvct_el0" : "=r" (val));
+}
+
 /**
  *
  * @tparam Func A function pointer
