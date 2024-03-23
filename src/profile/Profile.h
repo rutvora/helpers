@@ -11,10 +11,14 @@
 #include <functional>
 #include <concepts>
 
+#if defined(__x86_64__) || defined(_M_AMD64)
 #ifdef _MSC_VER
 #include "intrin.h"
 #else
 #include "x86intrin.h"
+#endif
+#elif defined(__arm__) || defined(__aarch64__)
+#include <arm_acle.h>
 #endif
 
 #include "../defines.h"
@@ -38,7 +42,13 @@
 #define RDPRU_ECX_APERF    1          /* Use APERF register in RDRPU */
 
 #ifndef PROFILE_TIMER
+
+#if defined(__x86_64__) || defined(_M_AMD64)
 #define PROFILE_TIMER TIMER_RDTSCP
+#elif defined(__arm__) || defined(__aarch64__)
+#define PROFILE_TIMER TIMER_ARMV8
+#endif
+
 #endif
 
 namespace Profile {
@@ -54,10 +64,12 @@ concept validFunctionWithoutRet = requires(Func &function, Args &... args) {
 };
 
 // Serialising instruction
+#if defined(__x86_64__) || defined(_M_AMD64)
 [[maybe_unused]] [[clang::always_inline]] [[gnu::always_inline]]
 inline void _cpuid() {
   asm volatile("cpuid" : : : "rax", "rbx", "rcx", "rdx");
 }
+#endif
 
 // Timers
 [[maybe_unused]] [[clang::always_inline]] [[gnu::always_inline]] [[gnu::flatten]]
@@ -70,6 +82,7 @@ inline auto timerHighResClock() {
   return std::chrono::high_resolution_clock::now();
 }
 
+#if defined(__x86_64__) || defined(_M_AMD64)
 [[maybe_unused]] [[clang::always_inline]] [[gnu::always_inline]]
 inline auto timerRdtscp() {
   uint32_t low, high;
@@ -132,13 +145,14 @@ inline auto timerRdpru() {
   return ((low) | (uint64_t) (high) << 32);
 #endif
 }
-
+#elif defined(__arm__) || defined(__aarch64__)
 [[maybe_unused]] [[clang::always_inline]] [[gnu::always_inline]]
 inline auto timerArmV8() {
   uint64_t val;
   asm volatile("mrs %0, cntvct_el0" : "=r" (val));
+  return val;
 }
-
+#endif
 /**
  *
  * @tparam Func A function pointer

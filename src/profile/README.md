@@ -41,9 +41,15 @@ by RDTSC(P) will be a multiple of 29!
    This timer uses the RDPRU instruction avaliable on AMD hardware ONLY. RDPRU allows user-space programs to read the
    exact processor cycle count. As such, it does not have the issue that RDTSC(P) has on AMD processors. In addition, if
    you are measuring real cycle counts, this helps avoid setting the CPU core frequency (which requires root access).
-4. **TIMER_STEADY_CLOCK**
+4. **TIMER_ARMV8**:
+   This timer uses obtains the Counter-timer Virtual Count register. However, pre-ARMv8.6 processors update this at a
+   system dependent rate of 1 - 50 MHz, ARMv8.6 and ARMv9.1 update it at
+   1GHz [Source](https://developer.arm.com/documentation/102379/0103/What-is-the-Generic-Timer-?lang=en). Refer
+   to [this](https://cpufun.substack.com/p/fun-with-timers-and-cpuid) on how to get the update frequency for your
+   system.
+5. **TIMER_STEADY_CLOCK**
    This timer is the `std::chrono::steady_clock::now()`
-5. **TIMER_HIGH_RES_CLOCK**
+6. **TIMER_HIGH_RES_CLOCK**
    This timer is the `std::chrono::high_resolution_clock::now()`
 
 ### Features
@@ -63,15 +69,19 @@ TIMER_32_BIT TIMER_FEATURE_ON // Makes the timer 32-bit only
 - **TIMER_FENCE**: (DEFAULT = ON, Applicable to RDTSC, RDPRU, STEADY_CLOCK, HIGH_RES_CLOCK) - Issue a FENCE before
   the timer. The type of fence is defined by `TIMER_FENCE_TYPE`.
 - **TIMER_FENCE_TYPE**: (DEFAULT = `TIMER_SERIALIZE`). The following values are currently accepted:
-    - **TIMER_SERIALIZE**: Uses the [`CPUID`](https://www.felixcloutier.com/x86/cpuid) instruction to ensure
-      that all previous instructions finish executing and all loads/stores are complete.   
+    - **TIMER_SERIALIZE**: Uses the [`CPUID`](https://www.felixcloutier.com/x86/cpuid) instruction on amd64, and a
+      combination
+      of [`DSB SY` and `ISB SY`](https://developer.arm.com/documentation/dui0802/b/A32-and-T32-Instructions/DMB--DSB--and-ISB)
+      on arm to ensure that all previous instructions finish executing and all loads/stores are complete.  
       _Note: A better instruction [`SERIALIZE`](https://www.felixcloutier.com/x86/serialize) is available on Intel
       processors from 12th gen onwards, and can be used by replacing the definition with `_serialize` (which is already
       an intrinsic)_
-        - **TIMER_MFENCE**: Uses the [`MFENCE`](https://www.felixcloutier.com/x86/mfence) instruction to ensure all
-          previous
-          loads and stores are complete
-    - **TIMER_SFENCE**: Uses the [`SFENCE`](https://www.felixcloutier.com/x86/sfence) instruction to ensure all previous
-      stores are complete (loads may remain incomplete)
-    - **TIMER_LFENCE**: Uses the [`LFENCE`](https://www.felixcloutier.com/x86/lfence) instruction to ensure all previous
-      loads are complete (stores may remain incomplete)
+        - **TIMER_MFENCE**: Uses the [`MFENCE`](https://www.felixcloutier.com/x86/mfence) instruction on amd64
+          and [`DMB SY`](https://developer.arm.com/documentation/dui0802/b/A32-and-T32-Instructions/DMB--DSB--and-ISB)
+          on arm to ensure all previous loads and stores are complete.
+    - **TIMER_SFENCE**: Uses the [`SFENCE`](https://www.felixcloutier.com/x86/sfence) instruction on amd64
+      and [`DMB ST`](https://developer.arm.com/documentation/dui0802/b/A32-and-T32-Instructions/DMB--DSB--and-ISB) on
+      arm to ensure all previous stores are complete (loads may remain incomplete)
+    - **TIMER_LFENCE**: Uses the [`LFENCE`](https://www.felixcloutier.com/x86/lfence) instruction on amd64
+      and [`DMB LD`](https://developer.arm.com/documentation/dui0802/b/A32-and-T32-Instructions/DMB--DSB--and-ISB) on
+      arm to ensure all previous loads are complete (stores may remain incomplete)
