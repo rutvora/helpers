@@ -38,7 +38,7 @@ class Stats {
   friend void to_json(nlohmann::ordered_json &j, const Stats<T> &stats) {
     // Calculate the median
     double median = nanf64("Store vals is false");
-    if (stats.storeVals) {
+    if (stats.storeVals && stats.values.size() > 0) {
       // Update Median
       auto middleElem = std::next(stats.values.begin(), stats.values.size() / 2);
       if (stats.values.size() % 2 == 0) {
@@ -65,7 +65,7 @@ class Stats {
 
     // Calculate the median
     double median = nanf64("Store vals is false");
-    if (stats.storeVals) {
+    if (stats.storeVals && stats.values.size() > 0) {
       // Update Median
       auto middleElem = std::next(stats.values.begin(), stats.values.size() / 2);
       if (stats.values.size() % 2 == 0) {
@@ -114,9 +114,8 @@ class Stats {
    * @param unit The unit of measurement (appended to the output)
    * @param ignoreInitial The number of initial values to ignore
    * @param storeVals Whether to store the values or not
-   * @param expectedEntries Pre-allocate a vector with these many entries to store the values
    */
-  explicit Stats(std::string unit, const uint64_t ignoreInitial = 0, const bool storeVals = false, const uint64_t expectedEntries = 1e3)
+  explicit Stats(std::string unit, const uint64_t ignoreInitial = 0, const bool storeVals = false)
       : unit(std::move(unit)), ignoreInitial(ignoreInitial), ignoreRemaining(ignoreInitial), storeVals(storeVals) {
   }
 
@@ -130,10 +129,34 @@ class Stats {
    * Update the statistics by adding these new vals
    * @param vals The vals to incorporate in the statistics
    */
-  [[maybe_unused]]
+  [[maybe_unused]] [[gnu::always_inline]] [[clang::always_inline]]
   inline void update(const std::vector<T> &vals) {
     for (auto val : vals) {
       update(val);
+    }
+  }
+
+  /**
+   * Update the statistics by adding these new vals
+   * @param vals The vals to incorporate in the statistics
+   */
+   template<size_t N>
+  [[maybe_unused]] [[gnu::always_inline]] [[clang::always_inline]]
+  inline void update(const std::array<T, N> &vals) {
+    for (auto val : vals) {
+      update(val);
+    }
+  }
+
+  /**
+   * Update the statistics by adding these new vals
+   * @param vals The vals to incorporate in the statistics
+   * @param length The number of values to incorporate
+   */
+  [[maybe_unused]] [[gnu::always_inline]] [[clang::always_inline]]
+  inline void update(const T *vals, const size_t length) {
+    for (size_t i = 0; i < length; i++) {
+      update(vals[i]);
     }
   }
 
