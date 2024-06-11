@@ -8,5 +8,6 @@
 #include "log/Logging.h"
 #include "profile/Profile.h"
 #include "stats/Stats.h"
+#include "perf/Perf.h"
 #include "printers.h"
 #include "sys/Sys.h"

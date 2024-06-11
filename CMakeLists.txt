@@ -37,7 +37,7 @@ else ()
     message("Building Release")
 endif ()
 
-include_directories(src src/channel src/cpu src/log src/profile src/stats)
+include_directories(src src/channel src/cpu src/log src/profile src/stats src/perf)
 
 add_subdirectory(src)
 add_subdirectory(tests)
