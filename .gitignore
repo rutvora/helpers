@@ -1,0 +1,23 @@
+# Ignore build files and directories
+*.i
+*.ii
+*.gpu
+*.ptx
+*.cubin
+*.fatbin
+cmake-build-debug/
+cmake-build-release/
+.cmake/
+
+# Ignore IDE diretories
+.idea/
+
+# Ignore configurations and results
+result*
+venv/
+scripts/configs/
+
+# Ignore temporary folders used for local code experiments
+temp/
+
+# Custom files
