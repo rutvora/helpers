@@ -1,0 +1,52 @@
+[
+  {
+    "results_file": "path/to/file",
+    "plot": {
+      "title": "Title",
+      "renderer": "bokeh",
+      "type": "",
+      "histogram": {
+        "bin_width": 0.2
+      },
+      "line": {
+      },
+      "scatter": {
+      }
+    },
+    "x_axis": {
+      "values": [
+        {
+          "param": "",
+          "index": null,
+          "error": "",
+          "legend": "",
+          "scale_by": 1,
+          "min_cutoff": 0,
+          "max_cutoff": 1000
+        }
+      ],
+      "label": "X-axis",
+      "plot_scale": "linear",
+      "ticks": [],
+      "tick_labels": []
+    },
+    "y_axis": {
+      "values": [
+        {
+          "param": "",
+          "index": null,
+          "error": "",
+          "legend": "Some Legend",
+          "position": "left",
+          "scale_by": 1,
+          "min_cutoff": 0,
+          "max_cutoff": 1000
+        }
+      ],
+      "label": "Y-axis",
+      "plot_scale": "linear",
+      "ticks": [],
+      "tick_labels": []
+    }
+  }
+]
