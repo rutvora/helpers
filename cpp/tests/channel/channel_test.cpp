@@ -32,13 +32,20 @@ void testChannelBlocking() {
   Channel<int, MaxSize> channel;
 
   std::thread sender([&]() {
+    auto start = std::chrono::steady_clock::now();
     channel << 1;
+    assert(std::chrono::steady_clock::now() < start + std::chrono::seconds(1)); // Should not block
+    start = std::chrono::steady_clock::now();
     channel << 2;
+    assert(std::chrono::steady_clock::now() < start + std::chrono::seconds(1)); // Should not block
+    start = std::chrono::steady_clock::now();
     channel << 3; // This should block as the channel is full
+    assert(std::chrono::steady_clock::now() > start + std::chrono::seconds(1)); // Should block
   });
 
   std::thread receiver([&]() {
     int value;
+    std::this_thread::sleep_for(std::chrono::seconds(1)); // Sender should block on the third insertion
     channel >> value;
     assert(value == 1);
 
