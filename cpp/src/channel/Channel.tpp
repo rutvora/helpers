@@ -5,7 +5,7 @@
 
 template<typename T, size_t maxSize>
 void Channel<T, maxSize>::send(const T &data) {
-  std::unique_lock<std::mutex> lock(mutex);
+  std::unique_lock<Mutex> lock(mutex);
   if (maxSize > 0) {
     while (queue.size() >= maxSize) {
       notFull.wait(lock);
@@ -17,7 +17,7 @@ void Channel<T, maxSize>::send(const T &data) {
 
 template<typename T, size_t maxSize>
 T &Channel<T, maxSize>::receive() {
-  std::unique_lock<std::mutex> lock(mutex);
+  std::unique_lock<Mutex> lock(mutex);
   while (queue.empty()) {
     notEmpty.wait(lock);
   }

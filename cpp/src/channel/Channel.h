@@ -6,7 +6,7 @@
 #define HELPERS_CHANNEL_H_
 
 #include <queue>
-#include <mutex>
+#include "../mutex/Mutex.h"
 #include <condition_variable>
 
 template<typename T, size_t maxSize = 0>
@@ -22,9 +22,9 @@ class Channel {
 
  private:
   std::queue<T> queue;
-  std::mutex mutex;
-  std::condition_variable notEmpty;
-  std::condition_variable notFull;
+  Mutex mutex;
+  std::condition_variable_any notEmpty;
+  std::condition_variable_any notFull;
 
   void send(const T &data);
   T &receive();
