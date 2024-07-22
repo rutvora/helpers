@@ -1,7 +1,8 @@
 //
 // Created by rutvora on 10/31/23.
 //
-
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattributes"
 [[maybe_unused]] [[gnu::always_inline]] [[clang::always_inline]]
 static inline uint64_t getDiff(uint64_t start, uint64_t end) {
   return end - start;
@@ -18,6 +19,8 @@ static inline uint64_t getDiff(std::chrono::time_point<std::chrono::high_resolut
                                std::chrono::time_point<std::chrono::high_resolution_clock> &end) {
   return (end - start).count();
 }
+
+#pragma GCC diagnostic pop
 
 template<typename ReturnType, typename Func, typename... Args>
 requires Profile::validFunctionWithRet<ReturnType, Func, Args...>

@@ -124,7 +124,8 @@ class Stats {
    * @param val The new value to incorporate in the statistics
    */
   void update(T val);
-
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattributes"
   /**
    * Update the statistics by adding these new vals
    * @param vals The vals to incorporate in the statistics
@@ -159,6 +160,8 @@ class Stats {
       update(vals[i]);
     }
   }
+
+#pragma GCC diagnostic pop
 
   inline void clear() {
     avg = stdev = M2 = 0;

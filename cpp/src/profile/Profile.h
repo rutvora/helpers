@@ -39,7 +39,7 @@
 #endif
 
 // Timer specific variables (do not change)
-#define RDPRU_ECX_APERF    1          /* Use APERF register in RDRPU */
+#define RDPRU_ECX_APERF    1          /* Use APERF register in RDPRU */
 
 #ifndef PROFILE_TIMER
 
@@ -63,7 +63,10 @@ concept validFunctionWithoutRet = requires(Func &function, Args &... args) {
   { function(args...) };
 };
 
-// Serialising instruction
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattributes"
+
+// Serialize instruction
 #if defined(__x86_64__) || defined(_M_AMD64)
 [[maybe_unused]] [[clang::always_inline]] [[gnu::always_inline]]
 inline void _cpuid() {
@@ -153,6 +156,8 @@ inline auto timerArmV8() {
   return val;
 }
 #endif
+
+#pragma GCC diagnostic pop
 /**
  *
  * @tparam Func A function pointer
@@ -172,7 +177,7 @@ template<typename Func, typename... Args>
 requires validFunctionWithoutRet<Func, Args...>
 uint64_t profile(const Func &function, Args &... args);
 
-};
+}
 
 // Include the definitions of the templated functions. Templates require that the types are known at compile time.
 // A separate cpp file is an isolated compilation unit, which would not know what the templates should concrete to,
