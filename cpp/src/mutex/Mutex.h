@@ -5,6 +5,9 @@
 #ifndef INTERCONNECT_SIDE_CHANNELS_SUBMODULES_HELPERS_CPP_SRC_MUTEX_MUTEX_H_
 #define INTERCONNECT_SIDE_CHANNELS_SUBMODULES_HELPERS_CPP_SRC_MUTEX_MUTEX_H_
 
+#include <atomic>
+#include <chrono>
+
 // A mutex class satisfying TimedLockable requirements
 class Mutex {
  public:
