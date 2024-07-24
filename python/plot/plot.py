@@ -188,6 +188,10 @@ class Bokeh:
             legend = value[4]
             position = value[5]
 
+            # Skip the plot if no parameters were found
+            if y_axis_values is None or len(y_axis_values) == 0:
+                return -1
+
             if plot_type == "line":
                 if x_axis_values is None:
                     x_axis_values = range(len(y_axis_values))
@@ -307,21 +311,21 @@ class Bokeh:
         if self.config["plot"]["type"] != "histogram":
             # X-axis
             x_max = max([x + err for value in self.values for x, err, y in
-                         zip(value[0], value[1], value[2]) if not np.isnan(x) and not np.isnan(y)])
+                         zip(value[0], value[1], value[2]) if not np.isnan(x) and not np.isnan(y)], default=10)
             x_max += 0.1 * x_max
             x_min = min([x - err for value in self.values for x, err, y in
-                         zip(value[0], value[1], value[2]) if not np.isnan(x) and not np.isnan(y)])
+                         zip(value[0], value[1], value[2]) if not np.isnan(x) and not np.isnan(y)], default=0)
             x_min -= 0.1 * x_min
             plot.x_range = Range1d(x_min, x_max)
 
             # Left Y-axis
             y_max = max(
                 [y + err for value in self.values if value[5] == "default"
-                 for y, err, x in zip(value[2], value[3], value[0]) if not np.isnan(y) and not np.isnan(x)])
+                 for y, err, x in zip(value[2], value[3], value[0]) if not np.isnan(y) and not np.isnan(x)], default=10)
             y_max += 0.1 * y_max
             y_min = min(
                 [y - err for value in self.values if value[5] == "default"
-                 for y, err, x in zip(value[2], value[3], value[0]) if not np.isnan(y) and not np.isnan(x)])
+                 for y, err, x in zip(value[2], value[3], value[0]) if not np.isnan(y) and not np.isnan(x)], default=0)
             y_min -= 0.1 * y_min
             plot.y_range = Range1d(y_min, y_max)
 
@@ -387,14 +391,19 @@ def get_scale_by_value(value, scale_by):
 def get_param_value(param_path, json_object, index, min_cutoff, max_cutoff):
     split_path = param_path.split(".")
     value = json_object
-    for key in split_path:
-        value = value[key]
-    if index is not None:
-        if isinstance(index, list):
-            for i in index:
-                value = value[i]
-        elif isinstance(index, int):
-            value = value[index]
+    try:
+        for key in split_path:
+            value = value[key]
+        if index is not None:
+            if isinstance(index, list):
+                for i in index:
+                    value = value[i]
+            elif isinstance(index, int):
+                value = value[index]
+    except (KeyError, IndexError):
+        warning = "Could not find the parameter at path: " + param_path + ". Skipping specified param..."
+        warnings.warn(warning)
+        return []
     if isinstance(value, list):
         if isinstance(min_cutoff, str):
             min_cutoff = np.percentile(value, float(min_cutoff[1:]))
@@ -467,7 +476,7 @@ def get_values(config):
             y_values = y_values / y_value_param["scale_by"]
 
             # Pad the values with NaNs if y_values is array of arrays
-            if isinstance(y_values[0], list):
+            if isinstance(y_values, list) and isinstance(y_values[0], list):
                 max_length = max(len(y) for y in y_values)
                 y_values = np.array([y + [np.nan] * (max_length - len(y)) for y in y_values])
             else:
@@ -484,7 +493,7 @@ def get_values(config):
                     y_err_values = y_err_values / y_value_param["scale_by"]
             else:
                 # Set err_values as 0
-                if isinstance(y_values[0], list):
+                if isinstance(y_values, list) and isinstance(y_values[0], list):
                     y_err_values = [[0 for _ in range(0, max_length)] for _ in range(0, len(y_values))]
                 else:
                     y_err_values = [[0 for _ in range(0, max_length)]]
@@ -507,7 +516,7 @@ def get_values(config):
             x_values = x_values / x_value_param["scale_by"]
 
             # Pad the values with NaNs if y_values is array of arrays
-            if isinstance(x_values[0], list):
+            if isinstance(x_values, list) and isinstance(x_values[0], list):
                 max_length = max(len(x) for x in x_values)
                 x_values = np.array([x + [np.nan] * (max_length - len(x)) for x in x_values])
 
@@ -522,7 +531,7 @@ def get_values(config):
                     x_err_values = x_err_values / x_value_param["scale_by"]
             else:
                 # Set err_values as 0
-                if isinstance(x_values[0], list):
+                if isinstance(x_values, list) and isinstance(x_values[0], list):
                     x_err_values = [[0 for _ in range(0, max_length)] for _ in range(0, len(y_values))]
                 else:
                     x_err_values = [[0 for _ in range(0, max_length)]]
@@ -538,11 +547,12 @@ def get_values(config):
 
         # Sort the values by X-axis
         if len(x_values) != len(y_values) or len(x_values) != len(x_err_values) or len(x_values) != len(y_err_values):
-            print(f"Error: Lengths of x_values, x_err_values, y_values, y_err_values do not match!\n"
-                  f"Skipping plot {config['plot']['title']}")
-            return None
+            warning = (f"Error: Lengths of x_values, x_err_values, y_values, y_err_values do not match!\n" +
+                       f"Skipping param {y_value_param['param']} from plot {config['plot']['title']}")
+            warnings.warn(warning)
+            continue
 
-        if y_values is not None and x_values is not None:
+        if y_values is not None and len(y_values) > 0 and x_values is not None and len(x_values) > 0:
             combined_array = zip(x_values, x_err_values, y_values, y_err_values)
             sorted_array = sorted(combined_array, key=lambda x: x[0])
             x_values, x_err_values, y_values, y_err_values = zip(*sorted_array)
