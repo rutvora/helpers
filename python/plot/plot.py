@@ -2,6 +2,7 @@ import argparse
 import json
 import numbers
 import os
+import subprocess
 import warnings
 
 import numpy as np
@@ -360,7 +361,11 @@ class Bokeh:
         plot.legend.click_policy = "hide"  # "hide" or "mute"
         plot.legend.location = "top_left"
         plot.legend.ncols = int(len(plot.legend.items) / 10) + 1
-        plot.add_layout(plot.legend[0], "center")
+        if plot.legend.ncols > 2:
+            plot.add_layout(plot.legend[0], "below")
+            plot.height = int(plot.height * 1.5)
+        else:
+            plot.add_layout(plot.legend[0], "center")
 
         # Write to file
         os.chdir(root_dir)
@@ -372,6 +377,16 @@ class Bokeh:
         html = file_html(plot, CDN, self.config["plot"]["title"])
         with open(f'{self.config["output_file"]}.html', "w") as f:
             f.write(html)
+
+
+def execute_program(command):
+    try:
+        result = subprocess.run(command, capture_output=True, text=True, check=True)
+        return result.stdout
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred while executing the command: {e}")
+        print(e.output)
+        return e.output
 
 
 def get_scale_by_value(value, scale_by):
@@ -591,6 +606,8 @@ def check_config(config):
     if ("results_file" not in config or config["results_file"] == '' or config["results_file"] is None
             or not isinstance(config["results_file"], str)):
         raise Exception("Missing required parameter: results_file")
+    if not os.path.isabs(config["results_file"]):
+        config["results_file"] = os.path.join(root_dir, config["results_file"])
     if "output_path" not in config or config["output_path"] is None or not isinstance(config["output_path"], str):
         config["output_path"] = ''
     if "plot" not in config or config["plot"] is None or not isinstance(config["plot"], dict):
@@ -827,6 +844,8 @@ def main():
 
 if __name__ == "__main__":
     # Set the working directory
-    root_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir, os.pardir))
-
+    root_dir = execute_program(["git", "rev-parse", "--show-superproject-working-tree"])
+    if root_dir == "":
+        root_dir = execute_program(["git", "rev-parse", "--show-toplevel"])
+    root_dir = root_dir.strip('\n')
     main()

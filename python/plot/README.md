@@ -16,7 +16,6 @@ pip3 install \
   matplotlib
 ```
 
-
 # Usage
 
 This script helps you plot a graph from the `results.json` produced from `run_experiments.py`.
@@ -92,6 +91,24 @@ where each config parameters are as follows (Note: default will be used if the p
 
 **Common**  
 `results_file`: (Required) The results.json file to use for this config  
+The path is a string which can be the absolute address (e.g. `/home/USER/PROJ/results/results.json`), or an address
+relative to the directory of the main git project. For example, you can set the `results_file` as `results/results.json`
+if your project is structured as follows:
+
+```
+main_proj_dir
+  |
+  |__ submodules
+  |   |
+  |   |__ helpers
+  |       |
+  |       |__ python (THIS DIRECTORY)
+  |
+  |__ results
+      |
+      |__ results.json       
+```
+
 _Note: The results file should be an array of jsons, each of which is a result. Even if the file contains one result, it
 should be in a JSON array format_  
 For example:
