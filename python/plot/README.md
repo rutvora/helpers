@@ -51,7 +51,7 @@ The `plot_config.json` looks like:
       "values": [
         {
           "param": "",
-          "index": None,
+          "index": null,
           "error": "",
           "legend": "",
           "scale_by": 1,
@@ -68,7 +68,7 @@ The `plot_config.json` looks like:
       "values": [
         {
           "param": "",
-          "index": None,
+          "index": null,
           "legend": "",
           "position": "left",
           "scale_by": 1,
@@ -82,7 +82,7 @@ The `plot_config.json` looks like:
       "tick_labels": []
     }
   }, {
-    ...
+    "another": "config here"
   }
 ]
 ```
@@ -140,7 +140,7 @@ _Note: If `type` is `histogram`, the plot will be generated from the axis where 
 `values->param`: (Required on Y-axis, Optional on X-axis, default (on X-axis)=index_of_entry_in_y) The parameter from
 the results file to use for the axis  
 `values->index`: (Optional, default=None) Index of the array, if param is an array of arrays.  
-Can optionally represent an index in multiple nested arrays by specifing an array of index.  
+Can optionally represent an index in multiple nested arrays by specifying an array of index.  
 For example: [[[1,2,3], [4,5,6]]] can be represented as [0,1] to get [4,5,6].  
 `values->legend`: (Optional, default="") The legend of this param to place in the plot
 `values->position`: (Optional, default="left") The location of the Y-axis (left or right).  
