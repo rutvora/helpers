@@ -334,11 +334,11 @@ class Bokeh:
             if any(value[5] == "right" for value in self.values):
                 y_max = max(
                     [y + err for value in self.values if value[5] == "right" for y, err, x in
-                     zip(value[2], value[3], value[0]) if not np.isnan(y) and not np.isnan(x)])
+                     zip(value[2], value[3], value[0]) if not np.isnan(y) and not np.isnan(x)], default=10)
                 y_max += 0.1 * y_max
                 y_min = min(
                     [y - err for value in self.values if value[5] == "right" for y, err, x in
-                     zip(value[2], value[3], value[0]) if not np.isnan(y) and not np.isnan(x)])
+                     zip(value[2], value[3], value[0]) if not np.isnan(y) and not np.isnan(x)], default=0)
                 y_min -= 0.1 * y_min
                 plot.extra_y_ranges["right"] = Range1d(y_min, y_max)
                 # Add the right axis
