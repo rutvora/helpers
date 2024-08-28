@@ -51,7 +51,6 @@ The `plot_config.json` looks like:
       "values": [
         {
           "param": "",
-          "index": null,
           "error": "",
           "legend": "",
           "scale_by": 1,
@@ -68,7 +67,6 @@ The `plot_config.json` looks like:
       "values": [
         {
           "param": "",
-          "index": null,
           "legend": "",
           "position": "left",
           "scale_by": 1,
@@ -139,9 +137,26 @@ _Note: If `type` is `histogram`, the plot will be generated from the axis where 
 **Per axis**  
 `values->param`: (Required on Y-axis, Optional on X-axis, default (on X-axis)=index_of_entry_in_y) The parameter from
 the results file to use for the axis  
-`values->index`: (Optional, default=None) Index of the array, if param is an array of arrays.  
-Can optionally represent an index in multiple nested arrays by specifying an array of index.  
-For example: [[[1,2,3], [4,5,6]]] can be represented as [0,1] to get [4,5,6].  
+This can be expressed as any combination of key and index in JSON (e.g. `[0].x[0][1].w`) will extract `[1,2,3,4]` out of
+the following result:
+
+```json
+[
+  {
+    "x": [
+      [
+        {
+          "w": [0, 0, 0, 0]
+        },
+        {
+          "w": [1, 2, 3, 4]
+        }
+      ]
+    ]
+  }
+]
+```
+
 `values->legend`: (Optional, default="") The legend of this param to place in the plot
 `values->position`: (Optional, default="left") The location of the Y-axis (left or right).  
 `values->scale_by`: (Optional, default=1) Divide all values of that axis by this value. Can be a number or "min",

@@ -4,6 +4,7 @@ import numbers
 import os
 import subprocess
 import warnings
+import re
 
 import numpy as np
 import pandas as pd
@@ -403,18 +404,21 @@ def get_scale_by_value(value, scale_by):
 
 
 # Get the value of a parameter from the results JSON object
-def get_param_value(param_path, json_object, index, min_cutoff, max_cutoff):
+def get_param_value(param_path, json_object, min_cutoff, max_cutoff):
     split_path = param_path.split(".")
     value = json_object
     try:
         for key in split_path:
-            value = value[key]
-        if index is not None:
-            if isinstance(index, list):
-                for i in index:
-                    value = value[i]
-            elif isinstance(index, int):
-                value = value[index]
+            match = re.match(r"([^\[\]]*)((\[\d+\])*)", key)
+            if match:
+                key = match.group(1)
+                indices = re.findall(r"\[(\d+)\]", match.group(2))
+                if key is not None and key != "":
+                    value = value[key]
+                for index in indices:
+                    value = value[int(index)]
+            else:
+                value = value[key]
     except (KeyError, IndexError):
         warning = "Could not find the parameter at path: " + param_path + ". Skipping specified param..."
         warnings.warn(warning)
@@ -483,7 +487,7 @@ def get_values(config):
             position = y_value_param["position"]
             # Values
             y_values = [param_value for result in results if
-                        (param_value := get_param_value(y_value_param["param"], result, y_value_param["index"],
+                        (param_value := get_param_value(y_value_param["param"], result,
                                                         y_value_param["min_cutoff"],
                                                         y_value_param["max_cutoff"])) is not None]
             y_values = np.array(y_values).T
@@ -500,7 +504,7 @@ def get_values(config):
             # Error values
             if y_value_param["error"] is not None:
                 y_err_values = [param_value for result in results if
-                                (param_value := get_param_value(y_value_param["error"], result, y_value_param["index"],
+                                (param_value := get_param_value(y_value_param["error"], result,
                                                                 None,
                                                                 None)) is not None]
                 if y_err_values is not None:
@@ -523,7 +527,7 @@ def get_values(config):
 
             # values
             x_values = [param_value for result in results if
-                        (param_value := get_param_value(x_value_param["param"], result, x_value_param["index"],
+                        (param_value := get_param_value(x_value_param["param"], result,
                                                         x_value_param["min_cutoff"],
                                                         x_value_param["max_cutoff"])) is not None]
             x_values = np.array(x_values).T
@@ -538,7 +542,7 @@ def get_values(config):
             # Error values
             if x_value_param["error"] is not None:
                 x_err_values = [param_value for result in results if
-                                (param_value := get_param_value(x_value_param["error"], result, x_value_param["index"],
+                                (param_value := get_param_value(x_value_param["error"], result,
                                                                 None,
                                                                 None)) is not None]
                 if x_err_values is not None:
@@ -693,8 +697,6 @@ def check_config(config):
 
     if y_params["values"] is not None:
         for value in y_params["values"]:
-            if "index" not in value or value["index"] == '' or not isinstance(value["index"], (int, list)):
-                value["index"] = None
             if "error" not in value or value["error"] == '' or not isinstance(value["error"], str):
                 value["error"] = None
             if "legend" not in value or not isinstance(value["legend"], str):
@@ -794,8 +796,6 @@ def check_config(config):
 
     if x_params["values"] is not None:
         for value in x_params["values"]:
-            if "index" not in value or value["index"] == '' or not isinstance(value["index"], (int, list)):
-                value["index"] = None
             if "error" not in value or value["error"] == '' or not isinstance(value["error"], str):
                 value["error"] = None
             if "legend" not in value or not isinstance(value["legend"], str):
