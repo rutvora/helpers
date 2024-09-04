@@ -68,6 +68,7 @@ The `plot_config.json` looks like:
         {
           "param": "",
           "legend": "",
+          "visible": true,
           "position": "left",
           "scale_by": 1,
           "min_cutoff": 1,
@@ -157,7 +158,9 @@ the following result:
 ]
 ```
 
-`values->legend`: (Optional, default="") The legend of this param to place in the plot
+`values->legend`: (Optional, default="") The legend of this param to place in the plot  
+`values->visible`: (Optional, default=true) Whether this plot is visible by default (only applicable to Y-axis and in
+bokeh)  
 `values->position`: (Optional, default="left") The location of the Y-axis (left or right).  
 `values->scale_by`: (Optional, default=1) Divide all values of that axis by this value. Can be a number or "min",
 "max", "count", or "total"  

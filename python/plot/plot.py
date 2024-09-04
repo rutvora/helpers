@@ -2,9 +2,9 @@ import argparse
 import json
 import numbers
 import os
+import re
 import subprocess
 import warnings
-import re
 
 import numpy as np
 import pandas as pd
@@ -189,6 +189,7 @@ class Bokeh:
             y_axis_err = value[3]
             legend = value[4]
             position = value[5]
+            visible = value[6]
 
             # Skip the plot if no parameters were found
             if y_axis_values is None or len(y_axis_values) == 0:
@@ -200,9 +201,9 @@ class Bokeh:
 
                 # Draw line and points
                 plot.line(x_axis_values, y_axis_values, legend_label=legend, line_width=2, line_color=color, alpha=0.8,
-                          muted_color=color, muted_alpha=0.2, y_range_name=position)
+                          muted_color=color, muted_alpha=0.2, y_range_name=position, visible=visible)
                 plot.scatter(x_axis_values, y_axis_values, fill_color=color, size=8, alpha=0.8, legend_label=legend,
-                             muted_color=color, muted_alpha=0.2, y_range_name=position)
+                             muted_color=color, muted_alpha=0.2, y_range_name=position, visible=visible)
 
                 # Draw error bars
                 upper_x = pd.Series([x + err for x, err in zip(x_axis_values, x_axis_err)], index=x_axis_values)
@@ -226,10 +227,10 @@ class Bokeh:
                 dot_size = 10
                 if x_axis_values is not None:
                     plot.scatter(x_axis_values, y_axis_values, legend_label=legend, color=color, size=dot_size,
-                                 alpha=0.8, muted_color=color, muted_alpha=0.2, y_range_name=position)
+                                 alpha=0.8, muted_color=color, muted_alpha=0.2, y_range_name=position, visible=visible)
                 else:
                     plot.scatter(y_axis_values, legend_label=legend, color=color, size=dot_size, alpha=0.8,
-                                 muted_color=color, muted_alpha=0.2, y_range_name=position)
+                                 muted_color=color, muted_alpha=0.2, y_range_name=position, visible=visible)
             elif plot_type == "histogram":
                 bin_width = self.config["plot"]["histogram"]["bin_width"]
                 if x_axis_values is not None:
@@ -246,7 +247,8 @@ class Bokeh:
                 hist = hist / sum(hist)
 
                 plot.quad(top=hist, bottom=0, left=edges[:-1], right=edges[1:], fill_color=color, line_color="white",
-                          legend_label=legend, alpha=0.8, muted_color=color, muted_alpha=0.2, y_range_name=position)
+                          legend_label=legend, alpha=0.8, muted_color=color, muted_alpha=0.2, y_range_name=position,
+                          visible=visible)
                 if bins != "auto" and self.config["x_axis"]["ticks"] is None:
                     self.config["x_axis"]["ticks"] = bins
                 yticks = [0, 0.2, 0.4, 0.6, 0.8, 1]
@@ -280,7 +282,7 @@ class Bokeh:
         # Set default active tools
         plot.toolbar.active_drag = pan
         plot.toolbar.active_scroll = wheel_zoom
-        plot.toolbar.active_tap = tap
+        plot.toolbar.active_tap = None
 
         # Axis labels and titles
         x_params = self.config["x_axis"]
@@ -588,7 +590,7 @@ def get_values(config):
         #     y_err_values = None
         # if x_err_values is not None and all([err == 0 for err in x_err_values]):
         #     x_err_values = None
-        values.append((x_values, x_err_values, y_values, y_err_values, legend, position))
+        values.append((x_values, x_err_values, y_values, y_err_values, legend, position, y_value_param["visible"]))
 
     return values
 
@@ -701,6 +703,8 @@ def check_config(config):
                 value["error"] = None
             if "legend" not in value or not isinstance(value["legend"], str):
                 value["legend"] = ""
+            if "visible" not in value or not isinstance(value["visible"], bool):
+                value["visible"] = True
             if ("position" not in value or value["position"] == '' or value["position"] == 'left'
                     or not isinstance(value["position"], str)):
                 value["position"] = "default"
