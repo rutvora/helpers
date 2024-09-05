@@ -3,6 +3,7 @@
     "results_file": "path/to/file",
     "plot": {
       "title": "Title",
+      "group": null,
       "renderer": "bokeh",
       "type": "",
       "histogram": {

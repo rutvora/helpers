@@ -12,6 +12,7 @@ apt-get install \
 # Install the required python packages
 pip3 install \
   termcolor \
+  numpy \
   bokeh \
   matplotlib
 ```
@@ -37,6 +38,7 @@ The `plot_config.json` looks like:
     "output_file": "",
     "plot": {
       "title": "",
+      "group": null,
       "renderer": "bokeh",
       "type": "",
       "histogram": {
@@ -124,6 +126,9 @@ For example:
 `output_path`: (Optional, default="") The path or directory inside the plots folder where the plot needs to be saved.  
 `output_file`: (Optional, default = title of the plot) The file name of the output plot  
 `plot`: (Required) Plot specific parameters (See below)
+`plot->group`: (Optional, int or string) If you want to group plots into a single HTML or image, specify the group
+identifier here  
+_Note: `output_file` and `output_path` will be ignored in case group is specified. The filename will be the group identifier_  
 
 **Plot-specific parameters**
 `title`: (Optional, default="{x_label} vs {y_label}") The title for the plot  

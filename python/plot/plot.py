@@ -13,6 +13,7 @@ from bokeh.models import Whisker, NumeralTickFormatter, Range1d, ColumnDataSourc
     WheelZoomTool, SaveTool, HoverTool, ResetTool, LinearAxis, AdaptiveTicker
 from bokeh.plotting import figure
 from bokeh.resources import CDN
+from bokeh.layouts import gridplot
 from matplotlib import pyplot as plt
 from matplotlib import ticker
 from matplotlib.lines import Line2D
@@ -29,24 +30,59 @@ colors = {
 
 
 class Matplotlib:
-    def __init__(self, config, values):
+    def __init__(self):
         # Hard-coded plot params
         self.title_font_size = 20
         self.label_font_size = 20
         self.tick_font_size = 18  # Also sets the font size of the scientific notation (offset, exponent)
         px = 1 / plt.rcParams['figure.dpi']
         self.plot_dimension = (1800 * px, 500 * px)
+        self.grid_columns = 2
 
         # Variable plot params
-        self.config = config
-        self.values = values
+        self.groups = {}
 
-    def plot_by_type(self, ax1, ax2):
-        plot_type = self.config["plot"]["type"]
+    @staticmethod
+    def write_to_file(plot, config=None, group=None):
+        # Write to file
+        if config is None and group is None:
+            warnings.warn("Either config or group should be present when writing to file!")
+        if config is None:
+            config = {
+                "results_file": "results.json",
+                "output_path": os.path.join(root_dir, "plots"),
+                "plot": {
+                    "title": str(group)
+                },
+                "output_file": "plot"
+            }
+        os.chdir(root_dir)
+        plot_dir = os.path.abspath(os.path.join(config["results_file"], os.pardir, "plots",
+                                                config["output_path"]))
+        if not os.path.exists(plot_dir):
+            os.makedirs(plot_dir)
+        os.chdir(plot_dir)
+        plot.savefig(f'{config["output_file"]}.png' if group is None else f'{str(group)}.png')
+
+    def write_group_plots(self):
+        for group, plots in self.groups.items():
+            rows = len(plots) // self.grid_columns
+            figs, axs = plt.subplots(rows, self.grid_columns, figsize=(
+                self.plot_dimension[0] * self.grid_columns, self.plot_dimension[1] * rows))
+            axs.flatten()
+            for i, fig in enumerate(plots):
+                # Render figure onto grid
+                fig.canvas.draw()
+                axs[i].imshow(fig.canvas.buffer_rgba())
+            self.write_to_file(figs, group=group)
+
+    @staticmethod
+    def plot_by_type(fig, config, values, ax1, ax2):
+        plot_type = config["plot"]["type"]
         color_list = list(colors)
         elems = []
-        for i in range(0, len(self.values)):
-            value = self.values[i]
+        for i in range(0, len(values)):
+            value = values[i]
             color = colors[color_list[i % len(color_list)]]
             x_axis_values = value[0]
             x_axis_err = value[1]
@@ -81,7 +117,7 @@ class Matplotlib:
                     else:
                         ax1.scatter(y_axis_values, label=legend, color=color, s=dot_size)
             elif plot_type == "histogram":
-                bin_width = self.config["plot"]["histogram"]["bin_width"]
+                bin_width = config["plot"]["histogram"]["bin_width"]
                 if x_axis_values is not None:
                     data = x_axis_values
                 else:
@@ -92,57 +128,59 @@ class Matplotlib:
                 else:
                     bins = None
 
-                plt.hist(data, bins=bins, label=legend, color=color)
-                if bins is not None and self.config["x_axis"]["ticks"] is None:
-                    self.config["x_axis"]["ticks"] = bins
+                ax1.hist(data, bins=bins, label=legend, color=color)
+                if bins is not None and config["x_axis"]["ticks"] is None:
+                    config["x_axis"]["ticks"] = bins
                 yticks = [0, 0.2, 0.4, 0.6, 0.8, 1]
-                self.config["y_axis"]["ticks"] = [tick * len(data) for tick in yticks]
-                plt.ylim(0, len(data))
-                plt.gca().yaxis.set_major_formatter(PercentFormatter(xmax=len(data)))
+                config["y_axis"]["ticks"] = [tick * len(data) for tick in yticks]
+                ax1.ylim(0, len(data))
+                fig.gca().yaxis.set_major_formatter(PercentFormatter(xmax=len(data)))
             else:
-                print(f"Error: Invalid plot type, skipping plot with title {self.config['plot']['title']}")
+                print(f"Error: Invalid plot type, skipping plot with title {config['plot']['title']}")
                 return -1
         return elems
 
     # Plot the values based on the x_axis_values and y_axis_values
-    def plot(self):
+    def plot(self, config, values):
         # Plot size
-        plt.figure(figsize=self.plot_dimension)
-        ax1 = plt.gca()
+        fig, ax = plt.subplots(figsize=self.plot_dimension)
+        # plt.figure(figsize=self.plot_dimension)
+        ax1 = ax
         ax2 = None
-        if any(value[5] == "right" for value in self.values):
+        if any(value[5] == "right" for value in values):
             ax2 = ax1.twinx()
 
         # Plot the values
-        elems = self.plot_by_type(ax1, ax2)
+        elems = self.plot_by_type(fig, config, values, ax1, ax2)
         if elems == -1:
             return -1
         elems = [elem for elem in elems if isinstance(elem, Line2D)]
 
         # Legend
-        legends = [value[4] for value in self.values]
-        plt.legend(elems, legends, loc=0)
+        legends = [value[4] for value in values]
+        ax.legend(elems, legends, loc=0)
 
         # Axis labels and titles
-        x_params = self.config["x_axis"]
-        y_params = self.config["y_axis"]
+        x_params = config["x_axis"]
+        y_params = config["y_axis"]
 
-        plt.xlabel(x_params["label"], fontsize=self.label_font_size)
+        ax.set_xlabel(x_params["label"], fontsize=self.label_font_size)
         ax1.set_ylabel(y_params["label"], fontsize=self.label_font_size)
         if ax2 is not None:
             ax2.set_ylabel(y_params["label_right"], fontsize=self.label_font_size)
-        plt.title(self.config["plot"]["title"], fontsize=self.title_font_size)
+        ax.set_title(config["plot"]["title"], fontsize=self.title_font_size)
 
         # Axis scale
         if x_params["plot_scale"] == "log":
-            plt.xscale("log")
-            plt.gca().xaxis.set_major_formatter(ticker.ScalarFormatter())
+            ax.xscale("log")
+            fig.gca().xaxis.set_major_formatter(ticker.ScalarFormatter())
         if y_params["plot_scale"] == "log":
-            plt.yscale("log")
-            plt.gca().yaxis.set_major_formatter(ticker.ScalarFormatter())
+            ax.yscale("log")
+            fig.gca().yaxis.set_major_formatter(ticker.ScalarFormatter())
 
         # Plot ticks
-        plt.xticks(ticks=x_params["ticks"], labels=x_params["tick_labels"], fontsize=self.tick_font_size)
+        if x_params["ticks"] is not None:
+            ax.set_xticks(ticks=x_params["ticks"], labels=x_params["tick_labels"], fontsize=self.tick_font_size)
         if y_params["tick_labels"] is not None:
             ax1.set_yticks(ticks=y_params["ticks"], labels=y_params["tick_labels"], fontsize=self.tick_font_size)
         else:
@@ -153,35 +191,63 @@ class Matplotlib:
                                fontsize=self.tick_font_size)
             else:
                 ax2.tick_params(axis='y', labelsize=self.tick_font_size)
-        plt.gca().xaxis.offsetText.set_fontsize(self.tick_font_size)
+        fig.gca().xaxis.offsetText.set_fontsize(self.tick_font_size)
 
-        # Write to file
-        os.chdir(root_dir)
-        plot_dir = os.path.abspath(os.path.join(self.config["results_file"], os.pardir, "plots",
-                                                self.config["output_path"]))
-        if not os.path.exists(plot_dir):
-            os.makedirs(plot_dir)
-        os.chdir(plot_dir)
-        plt.savefig(f'{self.config["output_file"]}.png')
+        if config["plot"]["group"] is not None:
+            if config["plot"]["group"] not in self.groups:
+                self.groups[config["plot"]["group"]] = []
+            self.groups[config["plot"]["group"]].append(fig)
+        else:
+            self.write_to_file(fig, config=config)
 
 
 class Bokeh:
-    def __init__(self, config, values):
+    def __init__(self):
         # Hard-coded plot params
         self.title_font_size = 20
         self.label_font_size = 20
         self.tick_font_size = 18  # Also sets the font size of the scientific notation (offset, exponent)
         self.plot_dimension = (900, 480)
+        self.grid_columns = 1
 
         # Variable plot params
-        self.config = config
-        self.values = values
+        self.groups = {}
 
-    def plot_by_type(self, plot):
-        plot_type = self.config["plot"]["type"]
+    @staticmethod
+    def write_to_file(plot, config=None, group=None):
+        # Write to file
+        if config is None and group is None:
+            warnings.warn("Either config or group should be present when writing to file!")
+        if config is None:
+            config = {
+                "results_file": "results.json",
+                "output_path": os.path.join(root_dir, "plots"),
+                "plot": {
+                    "title": str(group)
+                },
+                "output_file": "plot"
+            }
+        os.chdir(root_dir)
+        plot_dir = os.path.abspath(os.path.join(config["results_file"], os.pardir, "plots",
+                                                config["output_path"]))
+        if not os.path.exists(plot_dir):
+            os.makedirs(plot_dir)
+        os.chdir(plot_dir)
+        html = file_html(plot, CDN, config["plot"]["title"] if group is None else str(group))
+        with open(f'{config["output_file"]}.html' if group is None else f'{str(group)}.html', "w") as f:
+            f.write(html)
+
+    def write_group_plots(self):
+        for group, plots in self.groups.items():
+            grid = gridplot(plots, ncols=self.grid_columns)
+            self.write_to_file(grid, group=group)
+
+    @staticmethod
+    def plot_by_type(plot, config, values):
+        plot_type = config["plot"]["type"]
         color_list = list(colors)
-        for i in range(0, len(self.values)):
-            value = self.values[i]
+        for i in range(0, len(values)):
+            value = values[i]
             color = colors[color_list[i % len(color_list)]]
             x_axis_values = value[0]
             x_axis_err = value[1]
@@ -232,7 +298,7 @@ class Bokeh:
                     plot.scatter(y_axis_values, legend_label=legend, color=color, size=dot_size, alpha=0.8,
                                  muted_color=color, muted_alpha=0.2, y_range_name=position, visible=visible)
             elif plot_type == "histogram":
-                bin_width = self.config["plot"]["histogram"]["bin_width"]
+                bin_width = config["plot"]["histogram"]["bin_width"]
                 if x_axis_values is not None:
                     data = x_axis_values
                 else:
@@ -249,19 +315,19 @@ class Bokeh:
                 plot.quad(top=hist, bottom=0, left=edges[:-1], right=edges[1:], fill_color=color, line_color="white",
                           legend_label=legend, alpha=0.8, muted_color=color, muted_alpha=0.2, y_range_name=position,
                           visible=visible)
-                if bins != "auto" and self.config["x_axis"]["ticks"] is None:
-                    self.config["x_axis"]["ticks"] = bins
+                if bins != "auto" and config["x_axis"]["ticks"] is None:
+                    config["x_axis"]["ticks"] = bins
                 yticks = [0, 0.2, 0.4, 0.6, 0.8, 1]
-                self.config["y_axis"]["ticks"] = yticks
+                config["y_axis"]["ticks"] = yticks
                 plot.y_range = Range1d(0, 1)
                 plot.yaxis.formatter = NumeralTickFormatter(format="0%")
 
             else:
-                print(f"Error: Invalid plot type, skipping plot with title {self.config['plot']['title']}")
+                print(f"Error: Invalid plot type, skipping plot with title {config['plot']['title']}")
                 return -1
 
     # Plot the values based on the x_axis_values and y_axis_values
-    def plot(self):
+    def plot(self, config, values):
         # Plot hover
         tooltips = [("(x, y)", "($x, $y)"), ("mode", "vline")]
 
@@ -274,10 +340,10 @@ class Bokeh:
         reset = ResetTool()
 
         # Plot
-        plot = figure(width=self.plot_dimension[0], height=self.plot_dimension[1], title=self.config["plot"]["title"],
+        plot = figure(width=self.plot_dimension[0], height=self.plot_dimension[1], title=config["plot"]["title"],
                       toolbar_location="below", toolbar_sticky=False,
-                      tools=[pan, wheel_zoom, tap, save, hover, reset], x_axis_type=self.config["x_axis"]["plot_scale"],
-                      y_axis_type=self.config["y_axis"]["plot_scale"])
+                      tools=[pan, wheel_zoom, tap, save, hover, reset], x_axis_type=config["x_axis"]["plot_scale"],
+                      y_axis_type=config["y_axis"]["plot_scale"])
 
         # Set default active tools
         plot.toolbar.active_drag = pan
@@ -285,13 +351,13 @@ class Bokeh:
         plot.toolbar.active_tap = None
 
         # Axis labels and titles
-        x_params = self.config["x_axis"]
-        y_params = self.config["y_axis"]
+        x_params = config["x_axis"]
+        y_params = config["y_axis"]
 
         plot.xaxis.axis_label = x_params["label"]
         plot.yaxis.axis_label = y_params["label"]
         plot.axis.axis_label_text_font_size = f"{self.label_font_size}pt"
-        plot.title.text = self.config["plot"]["title"]
+        plot.title.text = config["plot"]["title"]
         plot.title.text_font_size = f"{self.title_font_size}pt"
 
         # Axis scale
@@ -312,35 +378,35 @@ class Bokeh:
         plot.axis.major_label_text_font_size = f"{self.tick_font_size}pt"
 
         # Axis limits (min, max with 10% padding)
-        if self.config["plot"]["type"] != "histogram":
+        if config["plot"]["type"] != "histogram":
             # X-axis
-            x_max = max([x + err for value in self.values for x, err, y in
+            x_max = max([x + err for value in values for x, err, y in
                          zip(value[0], value[1], value[2]) if not np.isnan(x) and not np.isnan(y)], default=10)
             x_max += 0.1 * x_max
-            x_min = min([x - err for value in self.values for x, err, y in
+            x_min = min([x - err for value in values for x, err, y in
                          zip(value[0], value[1], value[2]) if not np.isnan(x) and not np.isnan(y)], default=0)
             x_min -= 0.1 * x_min
             plot.x_range = Range1d(x_min, x_max)
 
             # Left Y-axis
             y_max = max(
-                [y + err for value in self.values if value[5] == "default"
+                [y + err for value in values if value[5] == "default"
                  for y, err, x in zip(value[2], value[3], value[0]) if not np.isnan(y) and not np.isnan(x)], default=10)
             y_max += 0.1 * y_max
             y_min = min(
-                [y - err for value in self.values if value[5] == "default"
+                [y - err for value in values if value[5] == "default"
                  for y, err, x in zip(value[2], value[3], value[0]) if not np.isnan(y) and not np.isnan(x)], default=0)
             y_min -= 0.1 * y_min
             plot.y_range = Range1d(y_min, y_max)
 
             # Right Y-axis
-            if any(value[5] == "right" for value in self.values):
+            if any(value[5] == "right" for value in values):
                 y_max = max(
-                    [y + err for value in self.values if value[5] == "right" for y, err, x in
+                    [y + err for value in values if value[5] == "right" for y, err, x in
                      zip(value[2], value[3], value[0]) if not np.isnan(y) and not np.isnan(x)], default=10)
                 y_max += 0.1 * y_max
                 y_min = min(
-                    [y - err for value in self.values if value[5] == "right" for y, err, x in
+                    [y - err for value in values if value[5] == "right" for y, err, x in
                      zip(value[2], value[3], value[0]) if not np.isnan(y) and not np.isnan(x)], default=0)
                 y_min -= 0.1 * y_min
                 plot.extra_y_ranges["right"] = Range1d(y_min, y_max)
@@ -356,7 +422,7 @@ class Bokeh:
                 plot.add_layout(right_y_axis, "right")
 
         # Plot the values
-        retval = self.plot_by_type(plot)
+        retval = self.plot_by_type(plot, config, values)
         if retval == -1:
             return -1
 
@@ -370,16 +436,12 @@ class Bokeh:
         else:
             plot.add_layout(plot.legend[0], "center")
 
-        # Write to file
-        os.chdir(root_dir)
-        plot_dir = os.path.abspath(os.path.join(self.config["results_file"], os.pardir, "plots",
-                                                self.config["output_path"]))
-        if not os.path.exists(plot_dir):
-            os.makedirs(plot_dir)
-        os.chdir(plot_dir)
-        html = file_html(plot, CDN, self.config["plot"]["title"])
-        with open(f'{self.config["output_file"]}.html', "w") as f:
-            f.write(html)
+        if config["plot"]["group"] is not None:
+            if config["plot"]["group"] not in self.groups:
+                self.groups[config["plot"]["group"]] = []
+            self.groups[config["plot"]["group"]].append(plot)
+        else:
+            self.write_to_file(plot, config=config)
 
 
 def execute_program(command):
@@ -411,10 +473,10 @@ def get_param_value(param_path, json_object, min_cutoff, max_cutoff):
     value = json_object
     try:
         for key in split_path:
-            match = re.match(r"([^\[\]]*)((\[\d+\])*)", key)
+            match = re.match(r"([^\[\]]*)((\[\d+])*)", key)
             if match:
                 key = match.group(1)
-                indices = re.findall(r"\[(\d+)\]", match.group(2))
+                indices = re.findall(r"\[(\d+)]", match.group(2))
                 if key is not None and key != "":
                     value = value[key]
                 for index in indices:
@@ -626,6 +688,8 @@ def check_config(config):
 
     # Check for plot parameters
     plot_params = config["plot"]
+    if "group" not in plot_params or plot_params["group"] == '':
+        plot_params["group"] = None
     if ("renderer" not in plot_params or plot_params["renderer"] == '' or plot_params["renderer"] is None
             or not isinstance(plot_params["renderer"], str)):
         plot_params["renderer"] = "bokeh"
@@ -836,6 +900,8 @@ def main():
     with open(args.configs, "r") as f:
         configs = json.load(f)
 
+    bkh = Bokeh()
+    mpl = Matplotlib()
     for config in configs:
         print(f"\nStarting plot {config['plot']['title']} and results file {config['results_file']}")
         check_config(config)
@@ -844,12 +910,15 @@ def main():
         if values is None:
             continue
         if config["plot"]["renderer"] == "bokeh":
-            Bokeh(config, values).plot()
+            bkh.plot(config, values)
         elif config["plot"]["renderer"] == "matplotlib":
-            Matplotlib(config, values).plot()
+            mpl.plot(config, values)
         else:
             raise Exception("Specified Renderer not supported. Must be either 'bokeh' or 'matplotlib' "
                             f"for config with results file {config['results_file']}")
+
+    bkh.write_group_plots()
+    mpl.write_group_plots()
 
 
 if __name__ == "__main__":
