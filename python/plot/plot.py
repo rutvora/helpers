@@ -602,6 +602,8 @@ def parse_arguments():
     # Add arguments
     parser.add_argument("-c", "--configs", default="plot_config.json",
                         help='The configuration file for the plot')
+    parser.add_argument("-d", "--dir", default=None,
+                        help='(Optional) The directory relative to which the paths are in the plot_config')
 
     # Return the params
     return parser.parse_args()
@@ -827,7 +829,11 @@ def check_config(config):
 
 
 def main():
-    with open(parse_arguments().configs, "r") as f:
+    args = parse_arguments()
+    if args.dir is not None:
+        global root_dir
+        root_dir = args.dir
+    with open(args.configs, "r") as f:
         configs = json.load(f)
 
     for config in configs:
