@@ -208,7 +208,7 @@ class Bokeh:
         self.label_font_size = 20
         self.tick_font_size = 18  # Also sets the font size of the scientific notation (offset, exponent)
         self.plot_dimension = (900, 480)
-        self.grid_columns = 1
+        self.grid_columns = 2
 
         # Variable plot params
         self.groups = {}
@@ -344,6 +344,9 @@ class Bokeh:
                       toolbar_location="below", toolbar_sticky=False,
                       tools=[pan, wheel_zoom, tap, save, hover, reset], x_axis_type=config["x_axis"]["plot_scale"],
                       y_axis_type=config["y_axis"]["plot_scale"])
+
+        # Plot borders
+        plot.min_border = 30
 
         # Set default active tools
         plot.toolbar.active_drag = pan
