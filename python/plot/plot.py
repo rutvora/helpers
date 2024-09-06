@@ -681,6 +681,8 @@ def check_config(config):
         raise Exception("Missing required parameter: results_file")
     if not os.path.isabs(config["results_file"]):
         config["results_file"] = os.path.join(root_dir, config["results_file"])
+    if not os.path.exists(config["results_file"]):
+        return -1
     if "output_path" not in config or config["output_path"] is None or not isinstance(config["output_path"], str):
         config["output_path"] = ''
     if "plot" not in config or config["plot"] is None or not isinstance(config["plot"], dict):
@@ -907,7 +909,9 @@ def main():
     mpl = Matplotlib()
     for config in configs:
         print(f"\nStarting plot {config['plot']['title']} and results file {config['results_file']}")
-        check_config(config)
+        if check_config(config) == -1:
+            print("No results file found. Skipping plot...")
+            continue
         # Get the values to plot
         values = get_values(config)
         if values is None:
