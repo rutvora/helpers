@@ -74,7 +74,8 @@ The `plot_config.json` looks like:
           "position": "left",
           "scale_by": 1,
           "min_cutoff": 1,
-          "max_cutoff": 1
+          "max_cutoff": 1,
+          "labels": none
         }
       ],
       "label": "",
@@ -128,12 +129,13 @@ For example:
 `plot`: (Required) Plot specific parameters (See below)
 `plot->group`: (Optional, int or string) If you want to group plots into a single HTML or image, specify the group
 identifier here  
-_Note: `output_file` and `output_path` will be ignored in case group is specified. The filename will be the group identifier_  
+_Note: `output_file` and `output_path` will be ignored in case group is specified. The filename will be the group
+identifier_
 
 **Plot-specific parameters**
 `title`: (Optional, default="{x_label} vs {y_label}") The title for the plot  
 `renderer`: (Optional, default="bokeh") The library to use for plotting. Either "bokeh" or "matplotlib"  
-`type`: (Required, allowed="line", "scatter", "histogram") The type of plot to be used  
+`type`: (Required, allowed="line", "scatter", "histogram", "heatmap") The type of plot to be used  
 _Note: If `type` is `histogram`, the plot will be generated from the axis where only 1 "values" entry is present._  
 `histogram`, `line`, or `scatter`: Parameters specific to the given plot type
 
@@ -166,6 +168,8 @@ the following result:
 `values->legend`: (Optional, default="") The legend of this param to place in the plot  
 `values->visible`: (Optional, default=true) Whether this plot is visible by default (only applicable to Y-axis and in
 bokeh)  
+`values->labels`: (Optional, default=None, only on Y-axis) The labels for these individual plot points. 
+For heatmaps, this label should be an array of integers, which will be used to make the heatmap.  
 `values->position`: (Optional, default="left") The location of the Y-axis (left or right).  
 `values->scale_by`: (Optional, default=1) Divide all values of that axis by this value. Can be a number or "min",
 "max", "count", or "total"  

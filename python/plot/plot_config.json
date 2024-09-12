@@ -40,7 +40,8 @@
           "position": "left",
           "scale_by": 1,
           "min_cutoff": 0,
-          "max_cutoff": 1000
+          "max_cutoff": 1000,
+          "labels": null
         }
       ],
       "label": "Y-axis",

@@ -10,10 +10,11 @@ import numpy as np
 import pandas as pd
 from bokeh.embed import file_html
 from bokeh.models import Whisker, NumeralTickFormatter, Range1d, ColumnDataSource, PanTool, TapTool, \
-    WheelZoomTool, SaveTool, HoverTool, ResetTool, LinearAxis, AdaptiveTicker
+    WheelZoomTool, SaveTool, HoverTool, ResetTool, LinearAxis, AdaptiveTicker, LabelSet
 from bokeh.plotting import figure
 from bokeh.resources import CDN
 from bokeh.layouts import gridplot
+
 from matplotlib import pyplot as plt
 from matplotlib import ticker
 from matplotlib.lines import Line2D
@@ -144,7 +145,7 @@ class Matplotlib:
     def plot(self, config, values):
         # Plot size
         fig, ax = plt.subplots(figsize=self.plot_dimension)
-        # plt.figure(figsize=self.plot_dimension)
+
         ax1 = ax
         ax2 = None
         if any(value[5] == "right" for value in values):
@@ -243,7 +244,18 @@ class Bokeh:
             self.write_to_file(grid, group=group)
 
     @staticmethod
-    def plot_by_type(plot, config, values):
+    def get_heatmap_color(min_val: float, max_val: float, value: float):
+        if value < min_val or value > max_val:
+            print("Value is out of range for heatmap. This should never happen! Report this bug")
+
+        ratio = (value - min_val) / (max_val - min_val)
+        r = int(255 * ratio)
+        g = int(255 * (1 - ratio))
+        b = 0
+
+        return r, g, b
+
+    def plot_by_type(self, plot, config, values):
         plot_type = config["plot"]["type"]
         color_list = list(colors)
         for i in range(0, len(values)):
@@ -256,6 +268,10 @@ class Bokeh:
             legend = value[4]
             position = value[5]
             visible = value[6]
+            labels = value[7]
+
+            label_offset_x = 5
+            label_offset_y = 5
 
             # Skip the plot if no parameters were found
             if y_axis_values is None or len(y_axis_values) == 0:
@@ -281,13 +297,13 @@ class Bokeh:
                 source_y = ColumnDataSource(data=dict(base=x_axis_values, upper=upper_y, lower=lower_y))
                 if x_axis_err != [0] * len(x_axis_err):
                     plot.add_layout(Whisker(base="base", upper="upper", lower="lower", level='glyph', dimension='width',
-                                            source=source_x, line_color='black', y_range_name=position))
+                                            source=source_x, line_color='black', y_range_name=position, visible=visible))
                 if y_axis_err != [0] * len(y_axis_err):
                     # plot.add_layout(Whisker(base="base", upper="upper", lower="lower", level='glyph',
                     #                        dimension='height', source=source_y, line_color='black'))
                     # Vertical area for 1 std deviation
                     plot.varea(x="base", y1="lower", y2="upper", source=source_y, fill_color=color, fill_alpha=0.15,
-                               legend_label=legend, y_range_name=position)
+                               legend_label=legend, y_range_name=position, visible=visible)
 
             elif plot_type == "scatter":
                 dot_size = 10
@@ -321,10 +337,34 @@ class Bokeh:
                 config["y_axis"]["ticks"] = yticks
                 plot.y_range = Range1d(0, 1)
                 plot.yaxis.formatter = NumeralTickFormatter(format="0%")
+            elif plot_type == "heatmap":
+                if labels is None:
+                    print("Heatmap requires labels for y axes")
+                    return -1
+                min_val = np.nanmin([float(label) if isinstance(label, (numbers.Number, str)) else float('nan') for label in labels])
+                max_val = np.nanmax([float(label) if isinstance(label, (numbers.Number, str)) else float('nan') for label in labels])
+                for j in range(0, len(x_axis_values)):
+                    if labels[j] is None:
+                        continue
+                    plot.rect(x=x_axis_values[j], y=y_axis_values[j], width=1, height=1,
+                              fill_color=Bokeh.get_heatmap_color(min_val, max_val, float(labels[j])),
+                              line_color=None)
 
+                label_offset_x = 0
+                label_offset_y = 0
             else:
                 print(f"Error: Invalid plot type, skipping plot with title {config['plot']['title']}")
                 return -1
+
+            # Add Labels
+            if labels is not None:
+                source = ColumnDataSource(data=dict(x=x_axis_values, y=y_axis_values, labels=labels))
+                label_set = LabelSet(x='x', y='y', text='labels', source=source,
+                                     x_offset=label_offset_x, y_offset=label_offset_y,
+                                     text_font_size=f"{self.label_font_size / 2}pt",
+                                     text_align="center", text_baseline="middle",
+                                     text_color="white")
+                plot.add_layout(label_set)
 
     # Plot the values based on the x_axis_values and y_axis_values
     def plot(self, config, values):
@@ -430,14 +470,15 @@ class Bokeh:
             return -1
 
         # Legend Location
-        plot.legend.click_policy = "hide"  # "hide" or "mute"
-        plot.legend.location = "top_left"
-        plot.legend.ncols = int(len(plot.legend.items) / 10) + 1
-        if plot.legend.ncols > 2:
-            plot.add_layout(plot.legend[0], "below")
-            plot.height = int(plot.height * 1.5)
-        else:
-            plot.add_layout(plot.legend[0], "center")
+        if len(plot.legend) > 0:
+            plot.legend.click_policy = "hide"  # "hide" or "mute"
+            plot.legend.location = "top_left"
+            plot.legend.ncols = int(len(plot.legend.items) / 10) + 1
+            if plot.legend.ncols > 2:
+                plot.add_layout(plot.legend[0], "below")
+                plot.height = int(plot.height * 1.5)
+            else:
+                plot.add_layout(plot.legend[0], "center")
 
         if config["plot"]["group"] is not None:
             if config["plot"]["group"] not in self.groups:
@@ -499,10 +540,11 @@ def get_param_value(param_path, json_object, min_cutoff, max_cutoff):
             value = [np.nan if elem <= min_cutoff else elem for elem in value if isinstance(elem, numbers.Number)]
         if max_cutoff is not None:
             value = [np.nan if elem >= max_cutoff else elem for elem in value if isinstance(elem, numbers.Number)]
-        nan_count = np.sum(np.isnan(value))
         if min_cutoff is not None or max_cutoff is not None:
-            print("% of values removed due to cutoffs from path", param_path, "is",
-                  nan_count / len(value) * 100, "%")
+            nan_count = np.sum(np.isnan(value))
+            if min_cutoff is not None or max_cutoff is not None:
+                print("% of values removed due to cutoffs from path", param_path, "is",
+                      nan_count / len(value) * 100, "%")
     elif isinstance(value, numbers.Number):
         if min_cutoff is not None and value < min_cutoff:
             value = np.nan
@@ -546,12 +588,19 @@ def get_values(config):
         max_length = 0
         legend = None
         position = "default"
+        labels = None
 
         if y_value_param is not None:
             # Legend
             legend = y_value_param["legend"]
             # Position
             position = y_value_param["position"]
+            # Labels
+            if y_value_param["labels"] is not None:
+                labels = [labels for result in results if (
+                    labels := get_param_value(y_value_param["labels"], result, None, None)
+                ) is not None]
+                labels = np.array(labels).T
             # Values
             y_values = [param_value for result in results if
                         (param_value := get_param_value(y_value_param["param"], result,
@@ -637,25 +686,30 @@ def get_values(config):
                        f"Skipping param {y_value_param['param']} from plot {config['plot']['title']}")
             warnings.warn(warning)
             continue
-
+        if labels is None:
+                labels = [None] * len(y_values)
+        if len(labels) != len(y_values):
+            warning = (f"Error: Length of labels does not match Y-axis length!\n" +
+                       f"Skipping labels for param {y_value_param['param']} from plot {config['plot']['title']}")
+            warnings.warn(warning)
+            labels = [None] * len(y_values)
         if y_values is not None and len(y_values) > 0 and x_values is not None and len(x_values) > 0:
-            combined_array = zip(x_values, x_err_values, y_values, y_err_values)
+            combined_array = zip(x_values, x_err_values, y_values, y_err_values, labels)
             sorted_array = sorted(combined_array, key=lambda x: x[0])
-            x_values, x_err_values, y_values, y_err_values = zip(*sorted_array)
+            x_values, x_err_values, y_values, y_err_values, labels = zip(*sorted_array)
             y_values = [item[0] if isinstance(item, (list, np.ndarray)) else item for item in y_values]
             y_err_values = [item[0] if isinstance(item, (list, np.ndarray)) else item for item in y_err_values]
+            labels = [item[0] if isinstance(item, (list, np.ndarray)) else item for item in labels]
+            if all(elem is None for elem in labels):
+                labels = None
 
         # Unpack x_values if necessary
         if x_values is not None:
             x_values = [item[0] if isinstance(item, (list, np.ndarray)) else item for item in x_values]
             x_err_values = [item[0] if isinstance(item, (list, np.ndarray)) else item for item in x_err_values]
 
-        # Set err_values to NoneType if they are all 0s (which we did to allow cleaner code with zip and sorting above)
-        # if y_err_values is not None and all([err == 0 for err in y_err_values]):
-        #     y_err_values = None
-        # if x_err_values is not None and all([err == 0 for err in x_err_values]):
-        #     x_err_values = None
-        values.append((x_values, x_err_values, y_values, y_err_values, legend, position, y_value_param["visible"]))
+        values.append(
+            (x_values, x_err_values, y_values, y_err_values, legend, position, y_value_param["visible"], labels))
 
     return values
 
@@ -700,8 +754,8 @@ def check_config(config):
         plot_params["renderer"] = "bokeh"
     if "type" not in plot_params or plot_params["type"] == '' or plot_params["type"] is None:
         raise Exception("Missing required parameter: plot: type")
-    if plot_params["type"] not in ["line", "scatter", "histogram"]:
-        raise Exception("Invalid plot type. Must be one of: line, scatter, histogram")
+    if plot_params["type"] not in ["line", "scatter", "histogram", "heatmap"]:
+        raise Exception("Invalid plot type. Must be one of: line, scatter, histogram or heatmap")
     # Check for plot-type specific parameters
     # Histogram
     if plot_params["type"] == "histogram":
@@ -776,6 +830,8 @@ def check_config(config):
                 value["legend"] = ""
             if "visible" not in value or not isinstance(value["visible"], bool):
                 value["visible"] = True
+            if "labels" not in value or not isinstance(value["labels"], (str, list)):
+                value["labels"] = None
             if ("position" not in value or value["position"] == '' or value["position"] == 'left'
                     or not isinstance(value["position"], str)):
                 value["position"] = "default"
