@@ -1,0 +1,51 @@
+[
+  {
+    "title": "Diagram1",
+    "nodes": [
+      {
+        "id": "title",
+        "title": {
+          "text": "TITLE",
+          "vpos": "top",
+          "hpos": "center"
+        },
+        "children": [
+          {
+            "id": "sub_title",
+            "title": {
+              "text": "SUB_TITLE",
+              "vpos": "mid",
+              "hpos": "center"
+            },
+            "children": [
+            ]
+          }
+        ]
+      },
+      {
+        "id": "title2",
+        "title": {
+          "text": "TITLE2",
+          "vpos": "top",
+          "hpos": "center"
+        },
+        "children": [
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "start": "title",
+        "end": "title2",
+        "text": null,
+        "arrows": 0
+      },
+      {
+        "start": "title",
+        "end": "title2",
+        "text": "SomeText",
+        "arrows": 2
+      }
+    ]
+  }
+]
