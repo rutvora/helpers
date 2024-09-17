@@ -38,6 +38,9 @@ and a "title" (all required) for that diagram. See the example `diagrams.json` f
 
 ### Node
 `id`: (Required, can NOT be "root") The ID of this node. Should be unique per diagram.  
+`duplicate`: (Optional, default is false) Duplicate the node with `id` as the node here
+(new IDs of the form `id + "_dup_" + str(dup_count)`will be assigned to the children, unless `dup_suffix` is set)  
+`dup_suffix`: (Optional, default is None) The suffix to add to the duplicate node IDs  
 `title`: (Optional, default is None) The parameters related to the title. See below for details.  
 `children`: (Optional, default is None) An array (or NoneType) representing the children of this node 
 (will be drawn inside this node)  

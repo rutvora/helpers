@@ -41,19 +41,14 @@
             ]
           }
         ]
+      },
+      {
+        "id": "title",
+        "duplicate": true,
+        "dup_suffix": "_1"
       }
     ],
     "edges": [
-      {
-        "start": {
-          "id": "title"
-        },
-        "end": {
-          "id": "title2"
-        },
-        "text": null,
-        "arrows": 0
-      },
       {
         "start": {
           "id": "title1",
@@ -63,7 +58,6 @@
           "id": "title2",
           "pos": "w"
         },
-        "text": "SomeText",
         "arrows": 2,
         "curved": true
       }

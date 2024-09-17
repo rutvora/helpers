@@ -117,17 +117,52 @@ def parse_arguments():
 
 def check_config(config: dict):
     node_children = {}
+    node_dup_count = {}  # "id": count
+
+    def create_duplicate_node_ids(dup_node: dict, dup_suffix: str):
+        dup_node["id"] += dup_suffix
+        for child in dup_node["children"]:
+            create_duplicate_node_ids(child, dup_suffix)
+
+    def create_duplicate_node(nodes, node_id: str, dup_suffix: str):
+        for node in nodes:
+            if node["id"] == node_id:
+                dup_node = deepcopy(node)
+                create_duplicate_node_ids(dup_node, dup_suffix)
+                return dup_node
+            else:
+                if len(node["children"]) > 0:
+                    create_duplicate_node(node["children"], node_id, dup_suffix)
+            return None
 
     # Define a function to check for nodes
     def check_node(node: dict, parent: str):
-        # TODO: Add support for duplicating a node (with new IDs)
         if "id" not in node:
             print("No ID found for node. Skipping node...")
             node.clear()
             return None
         node_id = node["id"]
+        # TODO: Add support for duplicating a node (with new IDs)
+        if "duplicate" in node and node["duplicate"] is True:
+            if node_id in node_dup_count:
+                count = node_dup_count[node_id] + 1
+            else:
+                count = 1
+            node_dup_count[node_id] = count
+            if "dup_suffix" not in node or not isinstance(node["dup_suffix"], str):
+                node["dup_suffix"] = f"_dup_{count}"
+            dup_node = create_duplicate_node(config["nodes"], node_id, node["dup_suffix"])
+            if dup_node is None:
+                print(f"Count not find node {node_id} to duplicate. Skipping the duplicate node...")
+                node.clear()
+                return None
+            # Change the values to the duplicated node
+            node.clear()
+            node.update(dup_node)
+            node_id = node["id"]
+
         if node_id in node_children:
-            print(f"Duplicated IDs {node_id}. Skipping the duplicate node...")
+            print(f"Duplicated ID {node_id} without specifying 'duplicate'. Skipping the duplicate node...")
             node.clear()
             return None
 
