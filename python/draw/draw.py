@@ -48,6 +48,8 @@ class Pydot:
                 node_attr = deepcopy(self.default_node_attr)
                 node_attr["labelloc"] = f"{node['title']['vpos']}"
                 node_attr["fillcolor"] = color
+                if node["attr"] is not None:
+                    node_attr.update(node["attr"])
                 drawn_cluster = Node(node["id"], label=node["title"]["text"], shape="box", **common_attr, **node_attr)
                 graph.add_node(drawn_cluster)
             else:
@@ -56,6 +58,8 @@ class Pydot:
                 cluster_attr["labelloc"] = f"{node['title']['vpos']}"
                 cluster_attr["labeljust"] = f"{node['title']['hpos']}"
                 cluster_attr["fillcolor"] = color
+                if node["attr"] is not None:
+                    cluster_attr.update(node["attr"])
                 drawn_cluster = Cluster(node["id"], label=node["title"]["text"], shape="box", **common_attr,
                                         **cluster_attr)
                 self.draw_nodes(drawn_cluster, node["children"])
@@ -72,6 +76,8 @@ class Pydot:
                 edge_attr["ltail"] = edge["ltail"]
             if "lhead" in edge:
                 edge_attr["lhead"] = edge["lhead"]
+            if edge["attr"] is not None:
+                edge_attr.update(edge["attr"])
             drawn_edge = Edge(edge["start"]["id"], edge["end"]["id"], **common_attr, **edge_attr)
             self.graph.add_edge(drawn_edge)
 
@@ -130,10 +136,9 @@ def check_config(config: dict):
                 dup_node = deepcopy(node)
                 create_duplicate_node_ids(dup_node, dup_suffix)
                 return dup_node
-            else:
-                if len(node["children"]) > 0:
-                    create_duplicate_node(node["children"], node_id, dup_suffix)
-            return None
+            elif len(node["children"]) > 0:
+                return create_duplicate_node(node["children"], node_id, dup_suffix)
+        return None
 
     # Define a function to check for nodes
     def check_node(node: dict, parent: str):
@@ -160,6 +165,7 @@ def check_config(config: dict):
             node.clear()
             node.update(dup_node)
             node_id = node["id"]
+            return None
 
         if node_id in node_children:
             print(f"Duplicated ID {node_id} without specifying 'duplicate'. Skipping the duplicate node...")
@@ -198,6 +204,8 @@ def check_config(config: dict):
             elif node["title"]["vpos"] == "bottom":
                 node["title"]["vpos"] = "b"
 
+        if "attr" not in node or not isinstance(node["attr"], dict):
+            node["attr"] = None
         if "children" not in node or not isinstance(node["children"], list):
             node["children"] = []
         for child in node["children"]:
@@ -265,6 +273,9 @@ def check_config(config: dict):
         elif edge["arrow"] == 2:
             edge["arrow"] = "both"
 
+        if "attr" not in edge or not isinstance(edge["attr"], dict):
+            edge["attr"] = None
+
     node_children["root"] = []
     for node in config["nodes"]:
         check_node(node, "root")
@@ -297,7 +308,7 @@ def main():
         diagram = Pydot(config).draw()
         if not os.path.exists(os.path.join(root_dir, "diagrams")):
             os.makedirs("diagrams")
-        diagram.write(path=f"{os.path.join('diagrams', config['title'])}.svg", format="svg")
+        diagram.write(path=f"{os.path.join('diagrams', config['title'].replace(' ', '_'))}.svg", format="svg")
 
 
 if __name__ == "__main__":
