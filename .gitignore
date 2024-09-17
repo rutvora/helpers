@@ -21,3 +21,5 @@ scripts/configs/
 temp/
 
 # Custom files
+diagrams/
+plots/

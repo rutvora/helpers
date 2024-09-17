@@ -11,9 +11,9 @@
         },
         "children": [
           {
-            "id": "sub_title",
+            "id": "title1",
             "title": {
-              "text": "SUB_TITLE",
+              "text": "TITLE1",
               "vpos": "mid",
               "hpos": "center"
             },
@@ -30,21 +30,42 @@
           "hpos": "center"
         },
         "children": [
+          {
+            "id": "title3",
+            "title": {
+              "text": "TITLE3",
+              "vpos": "top",
+              "hpos": "center"
+            },
+            "children": [
+            ]
+          }
         ]
       }
     ],
     "edges": [
       {
-        "start": "title",
-        "end": "title2",
+        "start": {
+          "id": "title"
+        },
+        "end": {
+          "id": "title2"
+        },
         "text": null,
         "arrows": 0
       },
       {
-        "start": "title",
-        "end": "title2",
+        "start": {
+          "id": "title1",
+          "pos": "e"
+        },
+        "end": {
+          "id": "title2",
+          "pos": "w"
+        },
         "text": "SomeText",
-        "arrows": 2
+        "arrows": 2,
+        "curved": true
       }
     ]
   }

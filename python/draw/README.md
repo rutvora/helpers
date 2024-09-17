@@ -11,7 +11,8 @@ apt-get update
 # Install python and pip
 apt-get install \
   python3 \
-  python3-pip
+  python3-pip \
+  graphviz
   
 # Install the required python packages
 pip3 install -r requirements.txt
@@ -48,7 +49,14 @@ and a "title" (all required) for that diagram. See the example `diagrams.json` f
 
 ### Edge
 _Note: You can't connect nodes with their own children_
-`start`: (Required) The `id` of the object where the edge starts
-`end`: (Required) The `id` of the object where the edge ends
+`start`: (Required) The starting edge
+`end`: (Required) The ending edge
 `text`: (Optional, default is None) The text to place on this edge
 `arrow`: (Optional, default is 0) 0 for no arrow, 1 for arrow at end, 2 for arrows on both start and end  
+`curved`: (Optional, default is None) Whether to curve the arrow or not, and from where
+(None, "start", "end", "both")  
+
+**start** and **end**
+`id`: The `id` of the start edge  
+`pos`: The position of the end of the arrow 
+(in terms of compass directions, i.e. 'n', 's', 'e', 'w' or combinations thereof)  
