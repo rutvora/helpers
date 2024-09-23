@@ -96,6 +96,33 @@ making it confusing. For example:
 
 This is a base class for the feature outlined in the example `choose_connection_pos`
 
+# Vars
+You can access vars using `${var.nested.path}` in your code
+
+### colors
+You can choose from the following colors:
+```
+magenta   : "#ffadad"
+orange    : "#ffd6a5"
+yellow    : "#fdffb6"
+green     : "#caffbf"
+cyan      : "#9bf6ff"
+blue      : "#a0c4ff"
+purple    : "#bdb2ff"
+pink      : "#ffc6ff"
+white     : "#ffffff"
+light_gray: "#cccccc"
+light_grey: "#cccccc"
+red       : "#e53935"
+```
+**Usage:** `${colors.magenta}`
+
+### connection_pos
+This variable allows you to create a 3*3 grid with the element in the center,
+thus allowing you to create a connection from any of the 
+other 8 locations around the element (which are negligible in size)
+For usage, see the `choose_connection_pos` example.
+
 # Examples
 
 ### choose_connection_pos

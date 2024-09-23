@@ -2,43 +2,22 @@
 
 any_elem: {
   class: base
-  top_left: {
-    class: dummy
-    width: 1
-    height: 1
+  # elem is required to be a var, else will be the first one to be imported instead of in-order
+  vars: {
+    elem: {
+      "elem"
+    }
   }
-  top_center: {
-    class: dummy
-    height: 1
-  }
-  top_right: {
-    class: dummy
-    width: 1
-    height: 1
-  }
-  center_left: {
-    class: dummy
-    width: 1
-  }
-  elem
-  center_right: {
-    class: dummy
-    width: 1
-  }
-  bottom_left: {
-    class: dummy
-    width: 1
-    height: 1
-  }
-  bottom_center: {
-    class: dummy
-    height: 1
-  }
-  bottom_right: {
-    class: dummy
-    width: 1
-    height: 1
-  }
+  ...${connection_pos.before_elem}
+  ...${elem}
+  ...${connection_pos.after_elem}
+
+  # The connections are required to ensure ordering,
+  # which otherwise changes based on the element declared in this file first
+  top_left -- top_center -- top_right
+  center_left -- elem -- center_right
+  bottom_left -- bottom_center -- bottom_right
+
 }
 
 y
