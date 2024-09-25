@@ -125,10 +125,12 @@ For example:
 ```
 
 `output_path`: (Optional, default="") The path or directory inside the plots folder where the plot needs to be saved.  
+_Note: `output_path` can't contain ":"_  
 `output_file`: (Optional, default = title of the plot) The file name of the output plot  
 `plot`: (Required) Plot specific parameters (See below)
 `plot->group`: (Optional, int or string) If you want to group plots into a single HTML or image, specify the group
 identifier here  
+_Note: `group` can't contain ":"_  
 _Note: `output_file` and `output_path` will be ignored in case group is specified. The filename will be the group
 identifier_
 

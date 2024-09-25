@@ -5,6 +5,7 @@ import os
 import re
 import subprocess
 import warnings
+import progressbar
 
 import numpy as np
 import pandas as pd
@@ -48,10 +49,13 @@ class Matplotlib:
         # Write to file
         if config is None and group is None:
             warnings.warn("Either config or group should be present when writing to file!")
+        output_path = ""
+        if group is not None:
+            output_path, group = str(group).split(":")
         if config is None:
             config = {
                 "results_file": "results.json",
-                "output_path": os.path.join(root_dir, "plots"),
+                "output_path": output_path,
                 "plot": {
                     "title": str(group)
                 },
@@ -66,6 +70,11 @@ class Matplotlib:
         plot.savefig(f'{config["output_file"]}.png' if group is None else f'{str(group)}.png')
 
     def write_group_plots(self):
+        if len(self.groups) == 0:
+            return
+        print("Writing group plots to file...")
+        progress_bar = progressbar.ProgressBar(max_value=len(self.groups))
+        progress = 0
         for group, plots in self.groups.items():
             rows = len(plots) // self.grid_columns
             figs, axs = plt.subplots(rows, self.grid_columns, figsize=(
@@ -76,6 +85,9 @@ class Matplotlib:
                 fig.canvas.draw()
                 axs[i].imshow(fig.canvas.buffer_rgba())
             self.write_to_file(figs, group=group)
+            progress += 1
+            progress_bar.update(progress)
+        progress_bar.finish()
 
     @staticmethod
     def plot_by_type(fig, config, values, ax1, ax2):
@@ -137,7 +149,7 @@ class Matplotlib:
                 ax1.ylim(0, len(data))
                 fig.gca().yaxis.set_major_formatter(PercentFormatter(xmax=len(data)))
             else:
-                print(f"Error: Invalid plot type, skipping plot with title {config['plot']['title']}")
+                warnings.warn(f"Invalid plot type, skipping plot with title {config['plot']['title']}")
                 return -1
         return elems
 
@@ -219,10 +231,15 @@ class Bokeh:
         # Write to file
         if config is None and group is None:
             warnings.warn("Either config or group should be present when writing to file!")
+        output_path = ""
+        # Discard output path from group
+        if group is not None:
+            output_path, group = str(group).split(":")
+
         if config is None:
             config = {
                 "results_file": "results.json",
-                "output_path": os.path.join(root_dir, "plots"),
+                "output_path": output_path,
                 "plot": {
                     "title": str(group)
                 },
@@ -239,9 +256,17 @@ class Bokeh:
             f.write(html)
 
     def write_group_plots(self):
+        if len(self.groups) == 0:
+            return
+        print("Writing group plots to file...")
+        progress_bar = progressbar.ProgressBar(max_value=len(self.groups))
+        progress = 0
         for group, plots in self.groups.items():
             grid = gridplot(plots, ncols=self.grid_columns)
             self.write_to_file(grid, group=group)
+            progress += 1
+            progress_bar.update(progress)
+        progress_bar.finish()
 
     @staticmethod
     def get_heatmap_color(min_val: float, max_val: float, value: float):
@@ -297,7 +322,8 @@ class Bokeh:
                 source_y = ColumnDataSource(data=dict(base=x_axis_values, upper=upper_y, lower=lower_y))
                 if x_axis_err != [0] * len(x_axis_err):
                     plot.add_layout(Whisker(base="base", upper="upper", lower="lower", level='glyph', dimension='width',
-                                            source=source_x, line_color='black', y_range_name=position, visible=visible))
+                                            source=source_x, line_color='black', y_range_name=position,
+                                            visible=visible))
                 if y_axis_err != [0] * len(y_axis_err):
                     # plot.add_layout(Whisker(base="base", upper="upper", lower="lower", level='glyph',
                     #                        dimension='height', source=source_y, line_color='black'))
@@ -341,8 +367,10 @@ class Bokeh:
                 if labels is None:
                     print("Heatmap requires labels for y axes")
                     return -1
-                min_val = np.nanmin([float(label) if isinstance(label, (numbers.Number, str)) else float('nan') for label in labels])
-                max_val = np.nanmax([float(label) if isinstance(label, (numbers.Number, str)) else float('nan') for label in labels])
+                min_val = np.nanmin(
+                    [float(label) if isinstance(label, (numbers.Number, str)) else float('nan') for label in labels])
+                max_val = np.nanmax(
+                    [float(label) if isinstance(label, (numbers.Number, str)) else float('nan') for label in labels])
                 for j in range(0, len(x_axis_values)):
                     if labels[j] is None:
                         continue
@@ -353,7 +381,7 @@ class Bokeh:
                 label_offset_x = 0
                 label_offset_y = 0
             else:
-                print(f"Error: Invalid plot type, skipping plot with title {config['plot']['title']}")
+                warnings.warn(f"Invalid plot type, skipping plot with title {config['plot']['title']}")
                 return -1
 
             # Add Labels
@@ -682,14 +710,14 @@ def get_values(config):
 
         # Sort the values by X-axis
         if len(x_values) != len(y_values) or len(x_values) != len(x_err_values) or len(x_values) != len(y_err_values):
-            warning = (f"Error: Lengths of x_values, x_err_values, y_values, y_err_values do not match!\n" +
+            warning = (f"Lengths of x_values, x_err_values, y_values, y_err_values do not match!\n" +
                        f"Skipping param {y_value_param['param']} from plot {config['plot']['title']}")
             warnings.warn(warning)
             continue
         if labels is None:
-                labels = [None] * len(y_values)
+            labels = [None] * len(y_values)
         if len(labels) != len(y_values):
-            warning = (f"Error: Length of labels does not match Y-axis length!\n" +
+            warning = (f"Length of labels does not match Y-axis length!\n" +
                        f"Skipping labels for param {y_value_param['param']} from plot {config['plot']['title']}")
             warnings.warn(warning)
             labels = [None] * len(y_values)
@@ -739,6 +767,10 @@ def check_config(config):
         return -1
     if "output_path" not in config or config["output_path"] is None or not isinstance(config["output_path"], str):
         config["output_path"] = ''
+    else:
+        if ':' in (config["output_path"]):
+            warnings.warn(": (colon) is not allowed in output path. Replacing it with _")
+            config["output_path"] = config["output_path"].replace(":", "_")
     if "plot" not in config or config["plot"] is None or not isinstance(config["plot"], dict):
         raise Exception("Missing required parameter: plot")
     if ("x_axis" not in config or "y_axis" not in config or config["x_axis"] is None or config["y_axis"] is None
@@ -749,6 +781,11 @@ def check_config(config):
     plot_params = config["plot"]
     if "group" not in plot_params or plot_params["group"] == '':
         plot_params["group"] = None
+    else:
+        if ':' in (plot_params["group"]):
+            warnings.warn(": (colon) is not allowed in group name. Replacing it with _")
+            plot_params["group"] = plot_params["group"].replace(":", "_")
+        plot_params["group"] = config["output_path"] + ":" + plot_params["group"]
     if ("renderer" not in plot_params or plot_params["renderer"] == '' or plot_params["renderer"] is None
             or not isinstance(plot_params["renderer"], str)):
         plot_params["renderer"] = "bokeh"
@@ -963,10 +1000,13 @@ def main():
 
     bkh = Bokeh()
     mpl = Matplotlib()
-    for config in configs:
+
+    progress_bar = progressbar.ProgressBar(max_value=len(configs), redirect_stdout=True, redirect_stderr=True)
+
+    for idx, config in enumerate(configs):
         print(f"\nStarting plot {config['plot']['title']} and results file {config['results_file']}")
         if check_config(config) == -1:
-            print("No results file found. Skipping plot...")
+            warnings.warn("No results file found. Skipping plot...")
             continue
         # Get the values to plot
         values = get_values(config)
@@ -977,9 +1017,11 @@ def main():
         elif config["plot"]["renderer"] == "matplotlib":
             mpl.plot(config, values)
         else:
-            raise Exception("Specified Renderer not supported. Must be either 'bokeh' or 'matplotlib' "
-                            f"for config with results file {config['results_file']}")
+            warnings.warn("Specified Renderer not supported. Must be either 'bokeh' or 'matplotlib' "
+                          f"for config with results file {config['results_file']}, ignoring this config")
+        progress_bar.update(idx + 1)
 
+    progress_bar.finish()
     bkh.write_group_plots()
     mpl.write_group_plots()
 
