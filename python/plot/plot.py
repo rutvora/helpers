@@ -555,7 +555,7 @@ def get_param_value(param_path, json_object, min_cutoff, max_cutoff):
                     value = value[int(index)]
             else:
                 value = value[key]
-    except (KeyError, IndexError):
+    except (KeyError, IndexError, TypeError):
         warning = "Could not find the parameter at path: " + param_path + ". Skipping specified param..."
         warnings.warn(warning)
         return []
@@ -639,9 +639,9 @@ def get_values(config):
             y_values = y_values / y_value_param["scale_by"]
 
             # Pad the values with NaNs if y_values is array of arrays
-            if isinstance(y_values, list) and isinstance(y_values[0], list):
+            if isinstance(y_values, (list, np.ndarray)) and isinstance(y_values[0], (list, np.ndarray)):
                 max_length = max(len(y) for y in y_values)
-                y_values = np.array([y + [np.nan] * (max_length - len(y)) for y in y_values])
+                y_values = np.array([np.append(y, [np.nan] * (max_length - len(y))) for y in y_values])
             else:
                 max_length = len(y_values)
 
@@ -656,7 +656,7 @@ def get_values(config):
                     y_err_values = y_err_values / y_value_param["scale_by"]
             else:
                 # Set err_values as 0
-                if isinstance(y_values, list) and isinstance(y_values[0], list):
+                if isinstance(y_values, (list, np.ndarray)) and isinstance(y_values[0], (list, np.ndarray)):
                     y_err_values = [[0 for _ in range(0, max_length)] for _ in range(0, len(y_values))]
                 else:
                     y_err_values = [[0 for _ in range(0, max_length)]]
@@ -678,10 +678,10 @@ def get_values(config):
             x_value_param["scale_by"] = get_scale_by_value(x_values, x_value_param["scale_by"])
             x_values = x_values / x_value_param["scale_by"]
 
-            # Pad the values with NaNs if y_values is array of arrays
-            if isinstance(x_values, list) and isinstance(x_values[0], list):
+            # Pad the values with NaNs if x_values is array of arrays
+            if isinstance(x_values, (list, np.ndarray)) and isinstance(x_values[0], (list, np.ndarray)):
                 max_length = max(len(x) for x in x_values)
-                x_values = np.array([x + [np.nan] * (max_length - len(x)) for x in x_values])
+                x_values = np.array([np.append(x, [np.nan] * (max_length - len(x))) for x in x_values])
 
             # Error values
             if x_value_param["error"] is not None:
@@ -694,14 +694,13 @@ def get_values(config):
                     x_err_values = x_err_values / x_value_param["scale_by"]
             else:
                 # Set err_values as 0
-                if isinstance(x_values, list) and isinstance(x_values[0], list):
-                    x_err_values = [[0 for _ in range(0, max_length)] for _ in range(0, len(y_values))]
+                if isinstance(x_values, (list, np.ndarray)) and isinstance(x_values[0], (list, np.ndarray)):
+                    x_err_values = [[0 for _ in range(0, max_length)] for _ in range(0, len(x_values))]
                 else:
                     x_err_values = [[0 for _ in range(0, max_length)]]
-                x_err_values = np.array(x_err_values).T
         else:
             # Generate x_values as index and x_err_values as 0
-            if y_values is not None and isinstance(y_values[0], list):
+            if y_values is not None and isinstance(y_values[0], (list, np.ndarray)):
                 x_values = [[i for i in range(0, max_length)] for _ in range(0, len(y_values))]
                 x_err_values = [[0 for _ in range(0, max_length)] for _ in range(0, len(y_values))]
             else:
@@ -709,11 +708,31 @@ def get_values(config):
                 x_err_values = [[0 for _ in range(0, max_length)]]
 
         # Sort the values by X-axis
-        if len(x_values) != len(y_values) or len(x_values) != len(x_err_values) or len(x_values) != len(y_err_values):
-            warning = (f"Lengths of x_values, x_err_values, y_values, y_err_values do not match!\n" +
+        if len(x_values) != len(x_err_values):
+            warning = (f"Lengths of x_values and x_err_values do not match!"
+                       f"Skipping param {x_value_param['param']} from plot {config['plot']['title']}")
+            warnings.warn(warning)
+            continue
+        if len(y_values) != len(y_err_values):
+            warning = (f"Lengths of y_values and y_err_values do not match!"
                        f"Skipping param {y_value_param['param']} from plot {config['plot']['title']}")
             warnings.warn(warning)
             continue
+        if len(x_values) != len(y_values):
+            warning = "Lengths of x_values and y_values do not match!"
+            warnings.warn(warning)
+            if len(x_values) == 1:
+                warning = (f"Duplicating X-axis values for {x_value_param['param']}, "
+                           f"{y_value_param['param']} from plot {config['plot']['title']}")
+                warnings.warn(warning)
+                x_values = np.array([x_values for _ in range(len(y_values))])
+                x_err_values = np.array([x_err_values for _ in range(len(y_values))])
+        if len(y_values) == 1:
+            warning = (f"Duplicating Y-axis values for {x_value_param['param']}, "
+                       f"{y_value_param['param']} from plot {config['plot']['title']}")
+            warnings.warn(warning)
+            y_values = np.array([y_values for _ in range(len(x_values))])
+            y_err_values = np.array([y_err_values for _ in range(len(x_values))])
         if labels is None:
             labels = [None] * len(y_values)
         if len(labels) != len(y_values):
@@ -721,6 +740,8 @@ def get_values(config):
                        f"Skipping labels for param {y_value_param['param']} from plot {config['plot']['title']}")
             warnings.warn(warning)
             labels = [None] * len(y_values)
+
+        # Sort the array
         if y_values is not None and len(y_values) > 0 and x_values is not None and len(x_values) > 0:
             combined_array = zip(x_values, x_err_values, y_values, y_err_values, labels)
             sorted_array = sorted(combined_array, key=lambda x: x[0])
