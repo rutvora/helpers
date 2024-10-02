@@ -11,10 +11,10 @@ import numpy as np
 import pandas as pd
 from bokeh.embed import file_html
 from bokeh.models import Whisker, NumeralTickFormatter, Range1d, ColumnDataSource, PanTool, TapTool, \
-    WheelZoomTool, SaveTool, HoverTool, ResetTool, LinearAxis, AdaptiveTicker, LabelSet
+    WheelZoomTool, SaveTool, HoverTool, ResetTool, LinearAxis, AdaptiveTicker, LabelSet, Div
 from bokeh.plotting import figure
 from bokeh.resources import CDN
-from bokeh.layouts import gridplot
+from bokeh.layouts import gridplot, column
 
 from matplotlib import pyplot as plt
 from matplotlib import ticker
@@ -508,6 +508,11 @@ class Bokeh:
             else:
                 plot.add_layout(plot.legend[0], "center")
 
+        # Notes
+        if config["plot"]["notes"] is not None:
+            notes = Div(text=config["plot"]["notes"])
+            plot = column(plot, notes)
+
         if config["plot"]["group"] is not None:
             if config["plot"]["group"] not in self.groups:
                 self.groups[config["plot"]["group"]] = []
@@ -660,7 +665,7 @@ def get_values(config):
                     y_err_values = [[0 for _ in range(0, max_length)] for _ in range(0, len(y_values))]
                 else:
                     y_err_values = [[0 for _ in range(0, max_length)]]
-                y_err_values = np.array(y_err_values).T
+                y_err_values = np.array(y_err_values)
         else:
             y_values = y_err_values = None
 
@@ -803,10 +808,11 @@ def check_config(config):
     if "group" not in plot_params or plot_params["group"] == '':
         plot_params["group"] = None
     else:
-        if ':' in (plot_params["group"]):
-            warnings.warn(": (colon) is not allowed in group name. Replacing it with _")
-            plot_params["group"] = plot_params["group"].replace(":", "_")
-        plot_params["group"] = config["output_path"] + ":" + plot_params["group"]
+        if plot_params["group"]:
+            if ':' in (plot_params["group"]):
+                warnings.warn(": (colon) is not allowed in group name. Replacing it with _")
+                plot_params["group"] = plot_params["group"].replace(":", "_")
+            plot_params["group"] = config["output_path"] + ":" + plot_params["group"]
     if ("renderer" not in plot_params or plot_params["renderer"] == '' or plot_params["renderer"] is None
             or not isinstance(plot_params["renderer"], str)):
         plot_params["renderer"] = "bokeh"
@@ -814,6 +820,8 @@ def check_config(config):
         raise Exception("Missing required parameter: plot: type")
     if plot_params["type"] not in ["line", "scatter", "histogram", "heatmap"]:
         raise Exception("Invalid plot type. Must be one of: line, scatter, histogram or heatmap")
+    if "notes" not in plot_params or not isinstance(plot_params["notes"], str):
+        plot_params["notes"] = None
     # Check for plot-type specific parameters
     # Histogram
     if plot_params["type"] == "histogram":

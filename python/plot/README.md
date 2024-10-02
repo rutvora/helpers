@@ -133,6 +133,8 @@ identifier here
 _Note: `group` can't contain ":"_  
 _Note: `output_file` and `output_path` will be ignored in case group is specified. The filename will be the group
 identifier_
+`plot->notes` (Optional, default=None) Some additional HTML text notes that you want to put in the plot
+(only works with Bokeh)  
 
 **Plot-specific parameters**
 `title`: (Optional, default="{x_label} vs {y_label}") The title for the plot  
