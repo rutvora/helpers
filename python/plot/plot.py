@@ -644,7 +644,9 @@ def get_values(config):
             y_values = y_values / y_value_param["scale_by"]
 
             # Pad the values with NaNs if y_values is array of arrays
-            if isinstance(y_values, (list, np.ndarray)) and isinstance(y_values[0], (list, np.ndarray)):
+            if (isinstance(y_values, (list, np.ndarray))
+                    and len(y_values) > 0
+                    and isinstance(y_values[0], (list, np.ndarray))):
                 max_length = max(len(y) for y in y_values)
                 y_values = np.array([np.append(y, [np.nan] * (max_length - len(y))) for y in y_values])
             else:
@@ -661,7 +663,9 @@ def get_values(config):
                     y_err_values = y_err_values / y_value_param["scale_by"]
             else:
                 # Set err_values as 0
-                if isinstance(y_values, (list, np.ndarray)) and isinstance(y_values[0], (list, np.ndarray)):
+                if (isinstance(y_values, (list, np.ndarray))
+                        and len(y_values) > 0
+                        and isinstance(y_values[0], (list, np.ndarray))):
                     y_err_values = [[0 for _ in range(0, max_length)] for _ in range(0, len(y_values))]
                 else:
                     y_err_values = [[0 for _ in range(0, max_length)]]
@@ -684,7 +688,9 @@ def get_values(config):
             x_values = x_values / x_value_param["scale_by"]
 
             # Pad the values with NaNs if x_values is array of arrays
-            if isinstance(x_values, (list, np.ndarray)) and isinstance(x_values[0], (list, np.ndarray)):
+            if (isinstance(x_values, (list, np.ndarray))
+                    and len(x_values) > 0
+                    and isinstance(x_values[0], (list, np.ndarray))):
                 max_length = max(len(x) for x in x_values)
                 x_values = np.array([np.append(x, [np.nan] * (max_length - len(x))) for x in x_values])
 
@@ -699,7 +705,9 @@ def get_values(config):
                     x_err_values = x_err_values / x_value_param["scale_by"]
             else:
                 # Set err_values as 0
-                if isinstance(x_values, (list, np.ndarray)) and isinstance(x_values[0], (list, np.ndarray)):
+                if (isinstance(x_values, (list, np.ndarray))
+                        and len(x_values) > 0
+                        and isinstance(x_values[0], (list, np.ndarray))):
                     x_err_values = [[0 for _ in range(0, max_length)] for _ in range(0, len(x_values))]
                 else:
                     x_err_values = [[0 for _ in range(0, max_length)]]
@@ -732,7 +740,7 @@ def get_values(config):
                 warnings.warn(warning)
                 x_values = np.array([x_values for _ in range(len(y_values))])
                 x_err_values = np.array([x_err_values for _ in range(len(y_values))])
-        if len(y_values) == 1:
+        if len(y_values) == 1 and len(x_values) > 1:
             warning = (f"Duplicating Y-axis values for {x_value_param['param']}, "
                        f"{y_value_param['param']} from plot {config['plot']['title']}")
             warnings.warn(warning)
@@ -1039,7 +1047,7 @@ def main():
             continue
         # Get the values to plot
         values = get_values(config)
-        if values is None:
+        if values is None or len(values) == 0:
             continue
         if config["plot"]["renderer"] == "bokeh":
             bkh.plot(config, values)
