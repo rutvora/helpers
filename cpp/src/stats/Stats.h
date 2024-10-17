@@ -124,13 +124,11 @@ class Stats {
    * @param val The new value to incorporate in the statistics
    */
   void update(T val);
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wattributes"
   /**
    * Update the statistics by adding these new vals
    * @param vals The vals to incorporate in the statistics
    */
-  [[maybe_unused]] [[gnu::always_inline]] [[clang::always_inline]]
+  [[maybe_unused]] [[gnu::always_inline]]
   inline void update(const std::vector<T> &vals) {
     for (auto val : vals) {
       update(val);
@@ -142,7 +140,7 @@ class Stats {
    * @param vals The vals to incorporate in the statistics
    */
    template<size_t N>
-  [[maybe_unused]] [[gnu::always_inline]] [[clang::always_inline]]
+  [[maybe_unused]] [[gnu::always_inline]]
   inline void update(const std::array<T, N> &vals) {
     for (auto val : vals) {
       update(val);
@@ -154,14 +152,12 @@ class Stats {
    * @param vals The vals to incorporate in the statistics
    * @param length The number of values to incorporate
    */
-  [[maybe_unused]] [[gnu::always_inline]] [[clang::always_inline]]
+  [[maybe_unused]] [[gnu::always_inline]]
   inline void update(const T *vals, const size_t length) {
     for (size_t i = 0; i < length; i++) {
       update(vals[i]);
     }
   }
-
-#pragma GCC diagnostic pop
 
   inline void clear() {
     avg = stdev = M2 = 0;

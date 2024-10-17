@@ -8,6 +8,7 @@
 cmake-build-debug/
 cmake-build-release/
 .cmake/
+__pycache__/
 
 # Ignore IDE diretories
 .idea/
@@ -17,8 +18,9 @@ result*
 venv/
 scripts/configs/
 
-# Ignore temporary folders used for local code experiments
+# Ignore temporary folders and files used for local code experiments
 temp/
+temp*
 
 # Custom files
 diagrams/

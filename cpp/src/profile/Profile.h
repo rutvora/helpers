@@ -63,30 +63,27 @@ concept validFunctionWithoutRet = requires(Func &function, Args &... args) {
   { function(args...) };
 };
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wattributes"
-
 // Serialize instruction
 #if defined(__x86_64__) || defined(_M_AMD64)
-[[maybe_unused]] [[clang::always_inline]] [[gnu::always_inline]]
+[[maybe_unused]] [[gnu::always_inline]]
 inline void _cpuid() {
   asm volatile("cpuid" : : : "rax", "rbx", "rcx", "rdx");
 }
 #endif
 
 // Timers
-[[maybe_unused]] [[clang::always_inline]] [[gnu::always_inline]] [[gnu::flatten]]
+[[maybe_unused]] [[gnu::always_inline]] [[gnu::flatten]]
 inline auto timerSteadyClock() {
   return std::chrono::steady_clock::now();
 }
 
-[[maybe_unused]] [[clang::always_inline]] [[gnu::always_inline]] [[gnu::flatten]]
+[[maybe_unused]] [[gnu::always_inline]] [[gnu::flatten]]
 inline auto timerHighResClock() {
   return std::chrono::high_resolution_clock::now();
 }
 
 #if defined(__x86_64__) || defined(_M_AMD64)
-[[maybe_unused]] [[clang::always_inline]] [[gnu::always_inline]]
+[[maybe_unused]] [[gnu::always_inline]]
 inline auto timerRdtscp() {
   uint32_t low, high;
   asm volatile(
@@ -109,7 +106,7 @@ inline auto timerRdtscp() {
 #endif
 }
 
-[[maybe_unused]] [[clang::always_inline]] [[gnu::always_inline]]
+[[maybe_unused]] [[gnu::always_inline]]
 inline auto timerRdtsc() {
   uint32_t low, high;
   asm volatile("rdtsc\n"
@@ -128,7 +125,7 @@ inline auto timerRdtsc() {
 #endif
 }
 
-[[maybe_unused]] [[clang::always_inline]] [[gnu::always_inline]]
+[[maybe_unused]] [[gnu::always_inline]]
 inline auto timerRdpru() {
   uint32_t low, high;
   asm volatile(
@@ -149,7 +146,7 @@ inline auto timerRdpru() {
 #endif
 }
 #elif defined(__arm__) || defined(__aarch64__)
-[[maybe_unused]] [[clang::always_inline]] [[gnu::always_inline]]
+[[maybe_unused]] [[gnu::always_inline]]
 inline auto timerArmV8() {
   uint64_t val;
   asm volatile("mrs %0, cntvct_el0" : "=r" (val));
@@ -157,7 +154,7 @@ inline auto timerArmV8() {
 }
 #endif
 
-#pragma GCC diagnostic pop
+
 /**
  *
  * @tparam Func A function pointer

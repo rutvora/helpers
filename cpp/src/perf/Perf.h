@@ -76,16 +76,11 @@ class Perf {
    */
   void disable();
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wattributes"
-
-  [[gnu::always_inline]] [[clang::always_inline]]
+  [[gnu::always_inline]]
   inline uint64_t readCounter() {
     rdpmc(Config, low, high);
     return ((uint64_t) high << 32) | low;
   }
-#pragma GCC diagnostic pop
-
 };
 
 #include "Perf.tpp"
