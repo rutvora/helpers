@@ -165,6 +165,7 @@ class Stats {
     max = std::numeric_limits<T>::lowest();
     minIdx = maxIdx = count = 0;
     ignoreRemaining = ignoreInitial;
+    values.clear();
   }
 
  private:
