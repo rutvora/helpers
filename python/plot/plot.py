@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 from bokeh.embed import file_html
 from bokeh.models import Whisker, NumeralTickFormatter, Range1d, ColumnDataSource, PanTool, TapTool, \
-    WheelZoomTool, SaveTool, HoverTool, ResetTool, LinearAxis, AdaptiveTicker, LabelSet, Div
+    WheelZoomTool, BoxZoomTool, SaveTool, HoverTool, ResetTool, LinearAxis, AdaptiveTicker, LabelSet, Div
 from bokeh.plotting import figure
 from bokeh.resources import CDN
 from bokeh.layouts import gridplot, column
@@ -402,6 +402,7 @@ class Bokeh:
         # Plot tools
         pan = PanTool()
         wheel_zoom = WheelZoomTool()
+        box_zoom = BoxZoomTool()
         tap = TapTool()
         save = SaveTool()
         hover = HoverTool(tooltips=tooltips)
@@ -410,7 +411,7 @@ class Bokeh:
         # Plot
         plot = figure(width=self.plot_dimension[0], height=self.plot_dimension[1], title=config["plot"]["title"],
                       toolbar_location="below", toolbar_sticky=False,
-                      tools=[pan, wheel_zoom, tap, save, hover, reset], x_axis_type=config["x_axis"]["plot_scale"],
+                      tools=[pan, wheel_zoom, box_zoom, tap, save, hover, reset], x_axis_type=config["x_axis"]["plot_scale"],
                       y_axis_type=config["y_axis"]["plot_scale"])
 
         # Plot borders
