@@ -128,20 +128,20 @@ For example:
 _Note: `output_path` can't contain ":"_  
 `output_file`: (Optional, default = title of the plot) The file name of the output plot  
 `plot`: (Required) Plot specific parameters (See below)
-`plot->group`: (Optional, int or string) If you want to group plots into a single HTML or image, specify the group
+
+**Plot parameters**
+`title`: (Optional, default="{x_label} vs {y_label}") The title for the plot  
+`renderer`: (Optional, default="bokeh") The library to use for plotting. Either "bokeh" or "matplotlib"  
+`type`: (Required, allowed="line", "scatter", "histogram", "heatmap") The type of plot to be used  
+_Note: If `type` is `histogram`, the plot will be generated from the X-axis if it exists, else the Y-axis._  
+`histogram`, `line`, or `scatter`: Parameters specific to the given plot type
+`group`: (Optional, int or string) If you want to group plots into a single HTML or image, specify the group
 identifier here  
 _Note: `group` can't contain ":"_  
 _Note: `output_file` and `output_path` will be ignored in case group is specified. The filename will be the group
 identifier_
-`plot->notes` (Optional, default=None) Some additional HTML text notes that you want to put in the plot
-(only works with Bokeh)  
-
-**Plot-specific parameters**
-`title`: (Optional, default="{x_label} vs {y_label}") The title for the plot  
-`renderer`: (Optional, default="bokeh") The library to use for plotting. Either "bokeh" or "matplotlib"  
-`type`: (Required, allowed="line", "scatter", "histogram", "heatmap") The type of plot to be used  
-_Note: If `type` is `histogram`, the plot will be generated from the axis where only 1 "values" entry is present._  
-`histogram`, `line`, or `scatter`: Parameters specific to the given plot type
+`notes` (Optional, default=None) Some additional HTML text notes that you want to put in the plot
+(only works with Bokeh)
 
 **histogram**
 `bin_width`: (Optional, default=0) The bin width in a histogram. If 0, plotting library decides bin width on its own

@@ -5,17 +5,16 @@ import os
 import re
 import subprocess
 import warnings
-import progressbar
 
 import numpy as np
 import pandas as pd
+import progressbar
 from bokeh.embed import file_html
+from bokeh.layouts import gridplot, column
 from bokeh.models import Whisker, NumeralTickFormatter, Range1d, ColumnDataSource, PanTool, TapTool, \
     WheelZoomTool, BoxZoomTool, SaveTool, HoverTool, ResetTool, LinearAxis, AdaptiveTicker, LabelSet, Div
 from bokeh.plotting import figure
 from bokeh.resources import CDN
-from bokeh.layouts import gridplot, column
-
 from matplotlib import pyplot as plt
 from matplotlib import ticker
 from matplotlib.lines import Line2D
@@ -346,6 +345,7 @@ class Bokeh:
                 else:
                     data = y_axis_values
 
+                data = [elem for elem in data if not np.isnan(elem)]
                 if bin_width != 0:
                     bins = np.arange(min(data), max(data), bin_width)
                 else:
@@ -411,8 +411,9 @@ class Bokeh:
         # Plot
         plot = figure(width=self.plot_dimension[0], height=self.plot_dimension[1], title=config["plot"]["title"],
                       toolbar_location="below", toolbar_sticky=False,
-                      tools=[pan, wheel_zoom, box_zoom, tap, save, hover, reset], x_axis_type=config["x_axis"]["plot_scale"],
-                      y_axis_type=config["y_axis"]["plot_scale"])
+                      tools=[pan, wheel_zoom, box_zoom, tap, save, hover, reset],
+                      x_axis_type=config["x_axis"]["plot_scale"], y_axis_type=config["y_axis"]["plot_scale"],
+                      output_backend="webgl")
 
         # Plot borders
         plot.min_border = 30
@@ -605,7 +606,8 @@ def get_values(config):
     if (len(x_params["values"]) != 1
             and y_params["values"] is not None
             and len(x_params["values"]) != len(y_params["values"])):
-        raise Exception("X-axis should have either 1 value or the same number of values as Y-axis!")
+        warnings.warn("X-axis should have either 1 value or the same number of values as Y-axis!")
+        return None
 
     # Duplicate x_params for all instances of y_params if necessary
     if (y_params["values"] is not None
@@ -792,92 +794,191 @@ def parse_arguments():
 
 
 def check_config(config):
-    # Check required parameters
-    if ("results_file" not in config or config["results_file"] == '' or config["results_file"] is None
-            or not isinstance(config["results_file"], str)):
-        raise Exception("Missing required parameter: results_file")
-    if not os.path.isabs(config["results_file"]):
-        config["results_file"] = os.path.join(root_dir, config["results_file"])
-    if not os.path.exists(config["results_file"]):
+    def check_results_file():
+        if ("results_file" not in config or config["results_file"] == '' or config["results_file"] is None
+                or not isinstance(config["results_file"], str)):
+            warnings.warn("Missing required parameter: results_file")
+            return -1
+        if not os.path.isabs(config["results_file"]):
+            config["results_file"] = os.path.join(root_dir, config["results_file"])
+        if not os.path.exists(config["results_file"]):
+            warnings.warn("results_file does not exist")
+            return -1
+
+    def check_output_path():
+        if "output_path" not in config or config["output_path"] is None or not isinstance(config["output_path"], str):
+            config["output_path"] = ''
+        else:
+            if ':' in (config["output_path"]):
+                warnings.warn(": (colon) is not allowed in output path. Replacing it with _")
+                config["output_path"] = config["output_path"].replace(":", "_")
+
+    def check_plot_params():
+        if "plot" not in config or config["plot"] is None or not isinstance(config["plot"], dict):
+            warnings.warn("Missing parameter: plot")
+            return -1
+        if "group" not in plot_params or plot_params["group"] == '':
+            plot_params["group"] = None
+        else:
+            if plot_params["group"]:
+                if ':' in (plot_params["group"]):
+                    warnings.warn(": (colon) is not allowed in group name. Replacing it with _")
+                    plot_params["group"] = plot_params["group"].replace(":", "_")
+                plot_params["group"] = config["output_path"] + ":" + plot_params["group"]
+        if ("renderer" not in plot_params or plot_params["renderer"] == '' or plot_params["renderer"] is None
+                or not isinstance(plot_params["renderer"], str)):
+            plot_params["renderer"] = "bokeh"
+        if "type" not in plot_params or plot_params["type"] == '' or plot_params["type"] is None:
+            warnings.warn("Missing required parameter: plot: type")
+            return -1
+        if plot_params["type"] not in ["line", "scatter", "histogram", "heatmap"]:
+            warnings.warn("Invalid plot type. Must be one of: line, scatter, histogram or heatmap")
+            return -1
+        if "notes" not in plot_params or not isinstance(plot_params["notes"], str):
+            plot_params["notes"] = None
+        # Check for plot-type specific parameters
+        # Histogram
+        if plot_params["type"] == "histogram":
+            if ("histogram" not in plot_params or plot_params["histogram"] is None
+                    or not isinstance(plot_params["histogram"], dict)):
+                plot_params["histogram"] = {}
+            if ("bin_width" not in plot_params["histogram"] or plot_params["histogram"]["bin_width"] is None
+                    or not isinstance(plot_params["histogram"]["bin_width"], numbers.Number)):
+                plot_params["histogram"]["bin_width"] = 0
+
+        # Line
+        if plot_params["type"] == "line":
+            if "line" not in plot_params or plot_params["line"] is None or not isinstance(plot_params["line"], dict):
+                plot_params["line"] = {}
+
+        # Scatter
+        if plot_params["type"] == "scatter":
+            if ("scatter" not in plot_params or plot_params["scatter"] is None
+                    or not isinstance(plot_params["scatter"], dict)):
+                plot_params["scatter"] = {}
+
+    def check_axis(axis):
+        if "values" in axis:
+            items_to_delete = []
+            for value in axis["values"]:
+                if ("param" not in value or value["param"] == '' or value["param"] is None
+                        or not isinstance(value["param"], str)):
+                    items_to_delete.append(value)
+            axis["values"] = [value for value in axis["values"] if value not in items_to_delete]
+        else:
+            axis["values"] = []
+        if len(axis["values"]) > 0:
+            for value in axis["values"]:
+                if "error" not in value or value["error"] == '' or not isinstance(value["error"], str):
+                    value["error"] = None
+                if "legend" not in value or not isinstance(value["legend"], str):
+                    value["legend"] = ""
+                if "scale_by" not in value or not isinstance(value["scale_by"], (numbers.Number, str)):
+                    value["scale_by"] = 1
+                if isinstance(value["scale_by"], str) and value["scale_by"] not in ["min", "max", "count", "total"]:
+                    value["scale_by"] = 1
+                if "min_cutoff" not in value or not isinstance(value["min_cutoff"], (numbers.Number, str)):
+                    value["min_cutoff"] = None
+                if isinstance(value["min_cutoff"], str) and value["min_cutoff"][0] != "p":
+                    value["min_cutoff"] = None
+                if "max_cutoff" not in value or not isinstance(value["max_cutoff"], (numbers.Number, str)):
+                    value["max_cutoff"] = None
+                if isinstance(value["max_cutoff"], str) and value["max_cutoff"][0] != "p":
+                    value["max_cutoff"] = None
+                # The below parameters are only useful for Y-axis and are ignored (unused) in the X-axis
+                if "visible" not in value or not isinstance(value["visible"], bool):
+                    value["visible"] = True
+                if ("position" not in value or value["position"] == '' or value["position"] == 'left'
+                        or not isinstance(value["position"], str)):
+                    value["position"] = "default"
+                if value["position"] != "default" and value["position"] != "right":
+                    warnings.warn("Y-axis position is neither 'default' nor 'right'. Defaulting to 'default' (left)")
+                    value["position"] = "default"
+                # These are individual element labels to be put inside a heatmap.
+                # They are unused in the other plot types
+                if "labels" not in value or not isinstance(value["labels"], (str, list)):
+                    value["labels"] = None
+
+        # Check for optional parameters
+        if "label" not in axis or axis["label"] is None or not isinstance(axis["label"], str):
+            axis["label"] = "Undefined"
+        if ("label_right" not in axis or axis["label_right"] == '' or axis["label_right"] is None
+                or not isinstance(axis["label_right"], str)):
+            axis["label_right"] = axis["label"]
+        if ("plot_scale" not in axis or axis["plot_scale"] == '' or axis["plot_scale"] is None
+                or not isinstance(axis["plot_scale"], str)):
+            axis["plot_scale"] = "linear"
+        if "ticks" not in axis or len(axis["ticks"]) == 0 or not isinstance(axis["ticks"], list):
+            axis["ticks"] = None
+        if ("tick_labels" not in axis or len(axis["tick_labels"]) == 0 or axis["ticks"] is None
+                or not isinstance(axis["tick_labels"], list)):
+            axis["tick_labels"] = None
+        if axis["ticks"] is not None and axis["tick_labels"] is not None:
+            if len(axis["ticks"]) != len(axis["tick_labels"]):
+                warnings.warn(
+                    "The number of y_ticks and y_tick_labels must be the same on Y-axis."
+                    "Faulty config with results file "
+                    f"{config['results_file']}, ignoring the tick labels")
+                temp = {}
+                for idx in range(0, len(axis["ticks"])):
+                    temp[axis["ticks"][idx]] = axis["tick_labels"][idx]
+                if config["plot"]["renderer"] == "bokeh":
+                    axis["tick_labels"] = temp
+
+        # The below ones are ignores for X-axis
+        if ("ticks_right" not in axis or len(axis["ticks_right"]) == 0
+                or not isinstance(axis["ticks_right"], list)):
+            axis["ticks_right"] = None
+        if ("tick_labels_right" not in axis or len(axis["tick_labels_right"]) == 0
+                or axis["ticks_right"] is None or not isinstance(axis["tick_labels_right"], list)):
+            axis["tick_labels_right"] = None
+
+        if axis["ticks_right"] is not None and axis["tick_labels_right"] is not None:
+            if len(axis["ticks_right"]) != len(axis["tick_labels_right"]):
+                warnings.warn(
+                    f"The number of y_ticks and y_tick_labels must be the same on the right Y-axis."
+                    f"Faulty config with results file {config['results_file']}. Ignoring the right-side tick labels")
+                temp = {}
+                for idx in range(0, len(axis["ticks_right"])):
+                    temp[axis["ticks_right"][idx]] = axis["tick_labels_right"][idx]
+                if config["plot"]["renderer"] == "bokeh":
+                    axis["tick_labels"] = temp
+        else:
+            # Only necessary for right Y-axis due to how it is instantiated
+            if config["plot"]["renderer"] == "bokeh":
+                axis["ticks_right"] = AdaptiveTicker()
+                axis["tick_labels_right"] = {}
+
+    if check_results_file() == -1:
         return -1
-    if "output_path" not in config or config["output_path"] is None or not isinstance(config["output_path"], str):
-        config["output_path"] = ''
-    else:
-        if ':' in (config["output_path"]):
-            warnings.warn(": (colon) is not allowed in output path. Replacing it with _")
-            config["output_path"] = config["output_path"].replace(":", "_")
-    if "plot" not in config or config["plot"] is None or not isinstance(config["plot"], dict):
-        raise Exception("Missing required parameter: plot")
+    check_output_path()
+    plot_params = config["plot"]
+    if check_plot_params() == -1:
+        return -1
+
     if ("x_axis" not in config or "y_axis" not in config or config["x_axis"] is None or config["y_axis"] is None
             or not isinstance(config["x_axis"], dict) or not isinstance(config["y_axis"], dict)):
-        raise Exception("Missing required parameter: x_axis or y_axis")
+        warnings.warn("Missing required parameter: x_axis or y_axis")
+        return -1
 
-    # Check for plot parameters
-    plot_params = config["plot"]
-    if "group" not in plot_params or plot_params["group"] == '':
-        plot_params["group"] = None
-    else:
-        if plot_params["group"]:
-            if ':' in (plot_params["group"]):
-                warnings.warn(": (colon) is not allowed in group name. Replacing it with _")
-                plot_params["group"] = plot_params["group"].replace(":", "_")
-            plot_params["group"] = config["output_path"] + ":" + plot_params["group"]
-    if ("renderer" not in plot_params or plot_params["renderer"] == '' or plot_params["renderer"] is None
-            or not isinstance(plot_params["renderer"], str)):
-        plot_params["renderer"] = "bokeh"
-    if "type" not in plot_params or plot_params["type"] == '' or plot_params["type"] is None:
-        raise Exception("Missing required parameter: plot: type")
-    if plot_params["type"] not in ["line", "scatter", "histogram", "heatmap"]:
-        raise Exception("Invalid plot type. Must be one of: line, scatter, histogram or heatmap")
-    if "notes" not in plot_params or not isinstance(plot_params["notes"], str):
-        plot_params["notes"] = None
-    # Check for plot-type specific parameters
-    # Histogram
-    if plot_params["type"] == "histogram":
-        if ("histogram" not in plot_params or plot_params["histogram"] is None
-                or not isinstance(plot_params["histogram"], dict)):
-            plot_params["histogram"] = {}
-        if ("bin_width" not in plot_params["histogram"] or plot_params["histogram"]["bin_width"] is None
-                or not isinstance(plot_params["histogram"]["bin_width"], numbers.Number)):
-            plot_params["histogram"]["bin_width"] = 0
-
-    # Line
-    if plot_params["type"] == "line":
-        if "line" not in plot_params or plot_params["line"] is None or not isinstance(plot_params["line"], dict):
-            plot_params["line"] = {}
-
-    # Scatter
-    if plot_params["type"] == "scatter":
-        if ("scatter" not in plot_params or plot_params["scatter"] is None
-                or not isinstance(plot_params["scatter"], dict)):
-            plot_params["scatter"] = {}
-
-    # Check for axis parameters
-    y_params = config["y_axis"]
     x_params = config["x_axis"]
+    y_params = config["y_axis"]
 
-    # Delete values where "param" is empty or non-existent
-    items_to_delete = []
-    if "values" in x_params:
-        for value in x_params["values"]:
-            if ("param" not in value or value["param"] == '' or value["param"] is None
-                    or not isinstance(value["param"], str)):
-                items_to_delete.append(value)
-    x_params["values"] = [value for value in x_params["values"] if value not in items_to_delete]
-    if "values" in y_params:
-        for value in y_params["values"]:
-            if ("param" not in value or value["param"] == '' or value["param"] is None
-                    or not isinstance(value["param"], str)):
-                items_to_delete.append(value)
-    y_params["values"] = [value for value in y_params["values"] if value not in items_to_delete]
+    check_axis(x_params)
+    check_axis(y_params)
+
     if len(x_params["values"]) == 0 and len(y_params["values"]) == 0:
-        raise Exception("No valid values to plot")
+        warnings.warn("No valid X or Y axis to plot")
+        return -1
 
     # Check for Y-axis parameters
     # Check of required parameters
-    if plot_params["type"] != "histogram":
-        if "values" not in y_params or len(y_params["values"]) == 0:
-            raise Exception("Missing required parameter in y_axis: values")
+    if config["plot"]["type"] == "histogram":
+        if len(x_params["values"]) > 0:
+            y_params["values"] = x_params["values"]
+        else:
+            x_params["values"] = y_params["values"]
+    else:
         if len(x_params["values"]) != len(y_params["values"]):
             if len(x_params["values"]) == 1:
                 warnings.warn("The number of values in X-axis and Y-axis must be the same."
@@ -885,139 +986,8 @@ def check_config(config):
                 for i in range(0, len(y_params["values"]) - 1):
                     x_params["values"].append(x_params["values"][0])
             else:
-                raise Exception("The number of values in X-axis and Y-axis must be the same.")
-
-    else:  # If plot type is histogram
-        if "values" not in y_params and "values" not in x_params:
-            raise Exception("Missing values for either axis. Need one!")
-        elif len(y_params["values"]) != 1 and len(x_params["values"]) != 1:
-            raise Exception("Too many values for either axis. Need one!")
-        elif "values" not in y_params or len(y_params["values"]) != 1:
-            y_params["values"] = None
-        elif "values" not in x_params or len(x_params["values"]) != 1:
-            x_params["values"] = None
-
-    if y_params["values"] is not None:
-        for value in y_params["values"]:
-            if "error" not in value or value["error"] == '' or not isinstance(value["error"], str):
-                value["error"] = None
-            if "legend" not in value or not isinstance(value["legend"], str):
-                value["legend"] = ""
-            if "visible" not in value or not isinstance(value["visible"], bool):
-                value["visible"] = True
-            if "labels" not in value or not isinstance(value["labels"], (str, list)):
-                value["labels"] = None
-            if ("position" not in value or value["position"] == '' or value["position"] == 'left'
-                    or not isinstance(value["position"], str)):
-                value["position"] = "default"
-            if value["position"] != "default" and value["position"] != "right":
-                raise Exception("Y-axis position should be either left or right")
-            if "scale_by" not in value or not isinstance(value["scale_by"], (numbers.Number, str)):
-                value["scale_by"] = 1
-            if isinstance(value["scale_by"], str) and value["scale_by"] not in ["min", "max", "count", "total"]:
-                value["scale_by"] = 1
-            if "min_cutoff" not in value or not isinstance(value["min_cutoff"], (numbers.Number, str)):
-                value["min_cutoff"] = None
-            if isinstance(value["min_cutoff"], str) and value["min_cutoff"][0] != "p":
-                value["min_cutoff"] = None
-            if "max_cutoff" not in value or not isinstance(value["max_cutoff"], (numbers.Number, str)):
-                value["max_cutoff"] = None
-            if isinstance(value["max_cutoff"], str) and value["max_cutoff"][0] != "p":
-                value["max_cutoff"] = None
-
-    # Check for optional parameters
-    if "label" not in y_params or y_params["label"] is None or not isinstance(y_params["label"], str):
-        y_params["label"] = ""
-    if ("label_right" not in y_params or y_params["label_right"] == '' or y_params["label_right"] is None
-            or not isinstance(y_params["label_right"], str)):
-        y_params["label_right"] = y_params["label"]
-    if ("plot_scale" not in y_params or y_params["plot_scale"] == '' or y_params["plot_scale"] is None
-            or not isinstance(y_params["plot_scale"], str)):
-        y_params["plot_scale"] = "linear"
-    if "ticks" not in y_params or len(y_params["ticks"]) == 0 or not isinstance(y_params["ticks"], list):
-        y_params["ticks"] = None
-    if ("tick_labels" not in y_params or len(y_params["tick_labels"]) == 0 or y_params["ticks"] is None
-            or not isinstance(y_params["tick_labels"], list)):
-        y_params["tick_labels"] = None
-    if ("ticks_right" not in y_params or len(y_params["ticks_right"]) == 0
-            or not isinstance(y_params["ticks_right"], list)):
-        y_params["ticks_right"] = None
-    if ("tick_labels_right" not in y_params or len(y_params["tick_labels_right"]) == 0
-            or y_params["ticks_right"] is None or not isinstance(y_params["tick_labels_right"], list)):
-        y_params["tick_labels_right"] = None
-    if y_params["ticks"] is not None and y_params["tick_labels"] is not None:
-        if len(y_params["ticks"]) != len(y_params["tick_labels"]):
-            raise Exception(
-                f"The number of y_ticks and y_tick_labels must be the same on Y-axis. Faulty config with results file "
-                f"{config['results_file']}")
-        else:
-            temp = {}
-        for i in range(0, len(y_params["ticks"])):
-            temp[y_params["ticks"][i]] = y_params["tick_labels"][i]
-        if plot_params["renderer"] == "bokeh":
-            y_params["tick_labels"] = temp
-
-    if y_params["ticks_right"] is not None and y_params["tick_labels_right"] is not None:
-        if len(y_params["ticks_right"]) != len(y_params["tick_labels_right"]):
-            raise Exception(
-                f"The number of y_ticks and y_tick_labels must be the same on the right Y-axis."
-                f"Faulty config with results file {config['results_file']}")
-        else:
-            temp = {}
-            for i in range(0, len(y_params["ticks_right"])):
-                temp[y_params["ticks_right"][i]] = y_params["tick_labels_right"][i]
-            if plot_params["renderer"] == "bokeh":
-                y_params["tick_labels"] = temp
-    else:
-        # Only necessary for right Y-axis due to how it is instantiated
-        if plot_params["renderer"] == "bokeh":
-            y_params["ticks_right"] = AdaptiveTicker()
-            y_params["tick_labels_right"] = {}
-
-    # Check for X-axis parameters
-    if "values" not in x_params or len(x_params["values"]) == 0 or not isinstance(x_params["values"], list):
-        x_params["values"] = None
-    if ("label" not in x_params or x_params["label"] == '' or x_params["label"] is None
-            or not isinstance(x_params["label"], str)):
-        x_params["label"] = "index"
-    if ("plot_scale" not in x_params or x_params["plot_scale"] == '' or x_params["plot_scale"] is None
-            or not isinstance(x_params["plot_scale"], str)):
-        x_params["plot_scale"] = "linear"
-    if "ticks" not in x_params or len(x_params["ticks"]) == 0 or not isinstance(x_params["ticks"], list):
-        x_params["ticks"] = None
-    if ("tick_labels" not in x_params or len(x_params["tick_labels"]) == 0 or x_params["ticks"] is None
-            or not isinstance(x_params["tick_labels"], list)):
-        x_params["tick_labels"] = None
-    if x_params["ticks"] is not None and x_params["tick_labels"] is not None:
-        if len(x_params["ticks"]) != len(x_params["tick_labels"]):
-            raise Exception(
-                f"The number of x_ticks and x_tick_labels must be the same on the X-axis."
-                f"Faulty config with results file {config['results_file']}")
-        else:
-            temp = {}
-            for i in range(0, len(x_params["ticks"])):
-                temp[x_params["ticks"][i]] = x_params["tick_labels"][i]
-            if plot_params["renderer"] == "bokeh":
-                x_params["tick_labels"] = temp
-
-    if x_params["values"] is not None:
-        for value in x_params["values"]:
-            if "error" not in value or value["error"] == '' or not isinstance(value["error"], str):
-                value["error"] = None
-            if "legend" not in value or not isinstance(value["legend"], str):
-                value["legend"] = ""
-            if "scale_by" not in value or not isinstance(value["scale_by"], (numbers.Number, str)):
-                value["scale_by"] = 1
-            if isinstance(value["scale_by"], str) and value["scale_by"] not in ["min", "max", "count", "total"]:
-                value["scale_by"] = 1
-            if "min_cutoff" not in value or not isinstance(value["min_cutoff"], (numbers.Number, str)):
-                value["min_cutoff"] = None
-            if isinstance(value["min_cutoff"], str) and value["min_cutoff"][0] != "p":
-                value["min_cutoff"] = None
-            if "max_cutoff" not in value or not isinstance(value["max_cutoff"], (numbers.Number, str)):
-                value["max_cutoff"] = None
-            if isinstance(value["max_cutoff"], str) and value["max_cutoff"][0] != "p":
-                value["max_cutoff"] = None
+                warnings.warn("X-axis has more than 1 value, but less than the number of values in Y-axis.")
+                return -1
 
     if ("title" not in plot_params or plot_params["title"] == '' or plot_params["title"] is None
             or not isinstance(plot_params["title"], str)):
@@ -1044,7 +1014,7 @@ def main():
     for idx, config in enumerate(configs):
         print(f"\nStarting plot {config['plot']['title']} and results file {config['results_file']}")
         if check_config(config) == -1:
-            warnings.warn("No results file found. Skipping plot...")
+            warnings.warn("Skipping plot...")
             continue
         # Get the values to plot
         values = get_values(config)
