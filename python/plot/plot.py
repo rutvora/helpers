@@ -572,9 +572,9 @@ def get_param_value(param_path, json_object, min_cutoff, max_cutoff):
         if isinstance(max_cutoff, str):
             max_cutoff = np.percentile(value, float(max_cutoff[1:]))
         if min_cutoff is not None:
-            value = [np.nan if elem <= min_cutoff else elem for elem in value if isinstance(elem, numbers.Number)]
+            value = [np.nan if elem < min_cutoff else elem for elem in value if isinstance(elem, numbers.Number)]
         if max_cutoff is not None:
-            value = [np.nan if elem >= max_cutoff else elem for elem in value if isinstance(elem, numbers.Number)]
+            value = [np.nan if elem > max_cutoff else elem for elem in value if isinstance(elem, numbers.Number)]
         if min_cutoff is not None or max_cutoff is not None:
             nan_count = np.sum(np.isnan(value))
             if min_cutoff is not None or max_cutoff is not None:
