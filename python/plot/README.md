@@ -169,7 +169,8 @@ the following result:
 ]
 ```
 
-`values->legend`: (Optional, default="") The legend of this param to place in the plot  
+`values->legend`: (Optional, default=values->param) The legend of this param to place in the plot. 
+No two legends in the same plot can have duplicates. If there are duplicates, they will default to the param name.  
 `values->visible`: (Optional, default=true) Whether this plot is visible by default (only applicable to Y-axis and in
 bokeh)  
 `values->labels`: (Optional, default=None, only on Y-axis) The labels for these individual plot points. 

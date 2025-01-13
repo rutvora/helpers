@@ -868,11 +868,23 @@ def check_config(config):
         else:
             axis["values"] = []
         if len(axis["values"]) > 0:
+            # Hashmap to avoid duplicate legends
+            legend_map = {}
+
+            # Set max MAX_VISIBLE to visible by default
+            visible_count = 0
             for value in axis["values"]:
                 if "error" not in value or value["error"] == '' or not isinstance(value["error"], str):
                     value["error"] = None
-                if "legend" not in value or not isinstance(value["legend"], str):
-                    value["legend"] = ""
+                if "legend" not in value or not isinstance(value["legend"], str) or value["legend"] in legend_map:
+                    value["legend"] = value["param"]
+                    if value["legend"] in legend_map:
+                        value["legend"] = value["legend"] + "_" + str(legend_map[value["legend"]])
+                        legend_map[value["legend"]] += 1
+                    else:
+                        legend_map[value["legend"]] = 1
+                else:
+                    legend_map[value["legend"]] = 1
                 if "scale_by" not in value or not isinstance(value["scale_by"], (numbers.Number, str)):
                     value["scale_by"] = 1
                 if isinstance(value["scale_by"], str) and value["scale_by"] not in ["min", "max", "count", "total"]:
