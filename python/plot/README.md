@@ -172,7 +172,7 @@ the following result:
 `values->legend`: (Optional, default=values->param) The legend of this param to place in the plot. 
 No two legends in the same plot can have duplicates. If there are duplicates, they will default to the param name.  
 `values->visible`: (Optional, default=true) Whether this plot is visible by default (only applicable to Y-axis and in
-bokeh)  
+bokeh). Max 5 legends set to visible by default. You can click on the legend to make more of them visible.  
 `values->labels`: (Optional, default=None, only on Y-axis) The labels for these individual plot points. 
 For heatmaps, this label should be an array of integers, which will be used to make the heatmap.  
 `values->position`: (Optional, default="left") The location of the Y-axis (left or right).  

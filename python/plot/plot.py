@@ -26,8 +26,12 @@ colors = {
     "orange": "#ffa300",
     "dark_green": "#047865",
     "blue": "#0bb4ff",
-    "black": "#000000",
+    "golden": "#ffa600",
+    "dark_magenta": "#d45087",
+    "violet": "#665191",
+    "black": "#444444",
 }
+MAX_VISIBLE = 5
 
 
 class Matplotlib:
@@ -900,6 +904,12 @@ def check_config(config):
                 # The below parameters are only useful for Y-axis and are ignored (unused) in the X-axis
                 if "visible" not in value or not isinstance(value["visible"], bool):
                     value["visible"] = True
+                    visible_count += 1
+                else:
+                    visible_count += 1
+                if visible_count > MAX_VISIBLE:
+                    value["visible"] = False
+                    visible_count -= 1
                 if ("position" not in value or value["position"] == '' or value["position"] == 'left'
                         or not isinstance(value["position"], str)):
                     value["position"] = "default"
