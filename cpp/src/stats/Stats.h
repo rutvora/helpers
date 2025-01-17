@@ -123,7 +123,7 @@ class Stats {
    * Update the statistics by adding this new value
    * @param val The new value to incorporate in the statistics
    */
-  void update(T val);
+  void update(T val, uint64_t timeStamp = 0);
   /**
    * Update the statistics by adding these new vals
    * @param vals The vals to incorporate in the statistics
@@ -132,6 +132,17 @@ class Stats {
   inline void update(const std::vector<T> &vals) {
     for (auto val : vals) {
       update(val);
+    }
+  }
+
+  /**
+ * Update the statistics by adding these new vals
+ * @param vals The vals with timestamps to incorporate in the statistics
+ */
+  [[maybe_unused]] [[gnu::always_inline]]
+  inline void update(const std::vector<std::pair<T, uint64_t>> &vals) {
+    for (auto val : vals) {
+      update(val.first, val.second);
     }
   }
 
@@ -148,6 +159,18 @@ class Stats {
   }
 
   /**
+ * Update the statistics by adding these new vals
+ * @param vals The vals with timestamps to incorporate in the statistics
+ */
+  template<size_t N>
+  [[maybe_unused]] [[gnu::always_inline]]
+  inline void update(const std::array<std::pair<T, uint64_t>, N> &vals) {
+    for (auto val : vals) {
+      update(val.first, val.second);
+    }
+  }
+
+  /**
    * Update the statistics by adding these new vals
    * @param vals The vals to incorporate in the statistics
    * @param length The number of values to incorporate
@@ -156,6 +179,18 @@ class Stats {
   inline void update(const T *vals, const size_t length) {
     for (size_t i = 0; i < length; i++) {
       update(vals[i]);
+    }
+  }
+
+  /**
+ * Update the statistics by adding these new vals
+ * @param vals The vals to incorporate in the statistics
+ * @param length The number of values to incorporate
+ */
+  [[maybe_unused]] [[gnu::always_inline]]
+  inline void update(const std::pair<T, uint64_t> *vals, const size_t length) {
+    for (size_t i = 0; i < length; i++) {
+      update(vals[i].first, vals[i].second);
     }
   }
 

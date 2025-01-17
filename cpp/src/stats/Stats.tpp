@@ -6,13 +6,18 @@
 #include "Stats.h"
 
 template<Number T>
-void Stats<T>::update(const T val) {
+void Stats<T>::update(const T val, const uint64_t timeStamp) {
   if (ignoreRemaining > 0) {
     --ignoreRemaining;
     return;
   }
   if (storeVals) {
-    values.insert({val, static_cast<uint64_t>((std::chrono::steady_clock::now() - startTime).count())});
+    values.insert(
+        {
+            val,
+            timeStamp != 0 ? timeStamp : static_cast<uint64_t>((std::chrono::steady_clock::now() - startTime).count())
+        }
+    );
   }
   if (min > val) {
     min = val;
