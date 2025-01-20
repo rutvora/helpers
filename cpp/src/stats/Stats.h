@@ -22,6 +22,7 @@ class Stats {
   struct Value {
     T val;
     uint64_t timeStamp;
+    Value(T value, uint64_t timeStamp) : val(value), timeStamp(timeStamp) {}
     bool operator<(const Value &rhs) const {
       return val < rhs.val;
     }
@@ -140,9 +141,9 @@ class Stats {
  * @param vals The vals with timestamps to incorporate in the statistics
  */
   [[maybe_unused]] [[gnu::always_inline]]
-  inline void update(const std::vector<std::pair<T, uint64_t>> &vals) {
-    for (auto val : vals) {
-      update(val.first, val.second);
+  inline void update(const std::vector<Value> &vals) {
+    for (auto value : vals) {
+      update(value.val, value.timeStamp);
     }
   }
 
@@ -150,7 +151,7 @@ class Stats {
    * Update the statistics by adding these new vals
    * @param vals The vals to incorporate in the statistics
    */
-   template<size_t N>
+  template<size_t N>
   [[maybe_unused]] [[gnu::always_inline]]
   inline void update(const std::array<T, N> &vals) {
     for (auto val : vals) {
@@ -164,9 +165,9 @@ class Stats {
  */
   template<size_t N>
   [[maybe_unused]] [[gnu::always_inline]]
-  inline void update(const std::array<std::pair<T, uint64_t>, N> &vals) {
-    for (auto val : vals) {
-      update(val.first, val.second);
+  inline void update(const std::array<Value, N> &vals) {
+    for (auto value : vals) {
+      update(value.val, value.timeStamp);
     }
   }
 
@@ -188,9 +189,9 @@ class Stats {
  * @param length The number of values to incorporate
  */
   [[maybe_unused]] [[gnu::always_inline]]
-  inline void update(const std::pair<T, uint64_t> *vals, const size_t length) {
+  inline void update(const Value *vals, const size_t length) {
     for (size_t i = 0; i < length; i++) {
-      update(vals[i].first, vals[i].second);
+      update(vals[i].val, vals[i].timeStamp);
     }
   }
 
@@ -204,7 +205,6 @@ class Stats {
   }
 
  private:
-
   std::multiset<Value> values{};
 
   std::atomic<double> M2{0};
