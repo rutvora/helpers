@@ -459,21 +459,23 @@ class Bokeh:
             # X-axis
             x_max = max([x + err for value in values for x, err, y in
                          zip(value[0], value[1], value[2]) if not np.isnan(x) and not np.isnan(y)], default=10)
-            x_max += 0.1 * x_max
             x_min = min([x - err for value in values for x, err, y in
                          zip(value[0], value[1], value[2]) if not np.isnan(x) and not np.isnan(y)], default=0)
-            x_min -= 0.1 * x_min
+            diff = x_max - x_min
+            x_max = x_max + 0.1 * diff
+            x_min = x_min - 0.1 * diff
             plot.x_range = Range1d(x_min, x_max)
 
             # Left Y-axis
             y_max = max(
                 [y + err for value in values if value[5] == "default"
                  for y, err, x in zip(value[2], value[3], value[0]) if not np.isnan(y) and not np.isnan(x)], default=10)
-            y_max += 0.1 * y_max
             y_min = min(
                 [y - err for value in values if value[5] == "default"
                  for y, err, x in zip(value[2], value[3], value[0]) if not np.isnan(y) and not np.isnan(x)], default=0)
-            y_min -= 0.1 * y_min
+            diff = y_max - y_min
+            y_max = y_max + 0.1 * diff
+            y_min = y_min - 0.1 * diff
             plot.y_range = Range1d(y_min, y_max)
 
             # Right Y-axis
