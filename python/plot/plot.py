@@ -885,8 +885,8 @@ def check_config(config):
                 if "legend" not in value or not isinstance(value["legend"], str) or value["legend"] in legend_map:
                     value["legend"] = value["param"]
                     if value["legend"] in legend_map:
-                        value["legend"] = value["legend"] + "_" + str(legend_map[value["legend"]])
                         legend_map[value["legend"]] += 1
+                        value["legend"] = value["legend"] + "_" + str(legend_map[value["legend"]])
                     else:
                         legend_map[value["legend"]] = 1
                 else:
