@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import progressbar
 from bokeh.embed import file_html
+from bokeh.io import export_png, export_svg
 from bokeh.layouts import gridplot, column
 from bokeh.models import Whisker, NumeralTickFormatter, Range1d, ColumnDataSource, PanTool, TapTool, \
     WheelZoomTool, BoxZoomTool, SaveTool, HoverTool, ResetTool, LinearAxis, LabelSet, Div
@@ -38,7 +39,10 @@ class Bokeh:
         # Variable plot params
         self.groups = {}
 
-    def write_to_file(self, plot, config=None, group=None):
+    def write_to_file(self, plot, output_format, config=None, group=None):
+        if output_format not in ["html", "svg", "png"]:
+            warnings.warn("Output format not supported. Defaulting to html")
+            output_format = "html"
         # Write to file
         if config is None and group is None:
             warnings.warn("Either config or group should be present when writing to file!")
@@ -62,9 +66,15 @@ class Bokeh:
         if not os.path.exists(plot_dir):
             os.makedirs(plot_dir)
         os.chdir(plot_dir)
-        html = file_html(plot, CDN, config["plot"]["title"] if group is None else str(group))
-        with open(f'{config["output_file"]}.html' if group is None else f'{str(group)}.html', "w") as f:
-            f.write(html)
+        output_file_name = f'{config["output_file"]}.html' if group is None else f'{str(group)}'
+        if output_format == "html":
+            html = file_html(plot, CDN, config["plot"]["title"] if group is None else str(group))
+            with open(output_file_name + ".html", "w") as f:
+                f.write(html)
+        elif output_format == "svg":
+            export_svg(plot, filename=output_file_name + ".svg")
+        elif output_format == "png":
+            export_png(plot, filename=output_file_name + ".png")
 
     def write_group_plots(self):
         if len(self.groups) == 0:
@@ -72,9 +82,9 @@ class Bokeh:
         print("Writing group plots to file...")
         progress_bar = progressbar.ProgressBar(max_value=len(self.groups))
         progress = 0
-        for group, plots in self.groups.items():
+        for group, (plots, output_format) in self.groups.items():
             grid = gridplot(plots, ncols=self.grid_columns)
-            self.write_to_file(grid, group=group)
+            self.write_to_file(grid, output_format=output_format, group=group)
             progress += 1
             progress_bar.update(progress)
         progress_bar.finish()
@@ -336,7 +346,7 @@ class Bokeh:
 
         if config["plot"]["group"] is not None:
             if config["plot"]["group"] not in self.groups:
-                self.groups[config["plot"]["group"]] = []
-            self.groups[config["plot"]["group"]].append(plot)
+                self.groups[config["plot"]["group"]] = ([], config["plot"]["output_format"])
+            self.groups[config["plot"]["group"]][0].append(plot)
         else:
-            self.write_to_file(plot, config=config)
+            self.write_to_file(plot, config["plot"]["output_format"], config=config)

@@ -63,6 +63,8 @@ def check_config(config):
         if "plot" not in config or config["plot"] is None or not isinstance(config["plot"], dict):
             warnings.warn("Missing parameter: plot")
             return -1
+        if "output_format" not in config["plot"] or config["plot"]["output_format"] not in ["html", "png", "svg"]:
+            config["plot"]["output_format"] = "html"
         if "dimensions" not in config["plot"] or len(config["plot"]["dimensions"]) != 2:
             config["plot"]["dimensions"] = [None, None]
         if "group" not in plot_params or plot_params["group"] == '':

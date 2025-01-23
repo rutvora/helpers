@@ -7,14 +7,16 @@ apt-get update
 # Install python and pip
 apt-get install \
   python3 \
-  python3-pip
+  python3-pip \
+  chromium-browser
   
 # Install the required python packages
 pip3 install \
   termcolor \
   numpy \
   bokeh \
-  matplotlib
+  matplotlib \
+  selenium
 ```
 
 # Usage
@@ -41,6 +43,8 @@ The `plot_config.json` looks like:
       "group": null,
       "renderer": "bokeh",
       "type": "",
+      "output_format": "html",
+      "dimensions": [1280, 768],
       "histogram": {
         "bin_width": 0.2
       },
@@ -75,7 +79,7 @@ The `plot_config.json` looks like:
           "scale_by": 1,
           "min_cutoff": 1,
           "max_cutoff": 1,
-          "labels": none,
+          "labels": null,
           "color": "blue"
         }
       ],
@@ -143,8 +147,11 @@ _Note: `output_file` and `output_path` will be ignored in case group is specifie
 identifier_
 `notes` (Optional, default=None) Some additional HTML text notes that you want to put in the plot
 (only works with Bokeh)  
-`dimensions` (Optional, default=[None, None]) The dimensions of the plot. 
+`dimensions` (Optional, default=[None, None]) The dimensions of the plot.
 If None, the plot will use the hard-coded default values  
+`output_format` (Optional, only applicable to bokeh, default=html). The output format for the bokeh plot.
+Has to be one of "html", "png", "svg". In case the plot is a part of a group, the first encountered output_format value
+is considered. The rest will be ignored.
 
 **histogram**
 `bin_width`: (Optional, default=0) The bin width in a histogram. If 0, plotting library decides bin width on its own
