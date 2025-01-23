@@ -40,8 +40,8 @@ class Matplotlib:
         self.title_font_size = 20
         self.label_font_size = 20
         self.tick_font_size = 18  # Also sets the font size of the scientific notation (offset, exponent)
-        px = 1 / plt.rcParams['figure.dpi']
-        self.plot_dimension = (1800 * px, 500 * px)
+        self.px = 1 / plt.rcParams['figure.dpi']
+        self.plot_dimension = (1800 * self.px, 500 * self.px)
         self.grid_columns = 2
 
         # Variable plot params
@@ -162,7 +162,12 @@ class Matplotlib:
     # Plot the values based on the x_axis_values and y_axis_values
     def plot(self, config, values):
         # Plot size
-        fig, ax = plt.subplots(figsize=self.plot_dimension)
+
+        x_dim = config["plot"]["dimensions"][0]
+        x_dim = x_dim if x_dim is not None else self.plot_dimension[0]
+        y_dim = config["plot"]["dimensions"][1]
+        y_dim = y_dim if y_dim is not None else self.plot_dimension[1]
+        fig, ax = plt.subplots(figsize=(x_dim * self.px, y_dim * self.px))
 
         ax1 = ax
         ax2 = None
@@ -416,8 +421,12 @@ class Bokeh:
         hover = HoverTool(tooltips=tooltips)
         reset = ResetTool()
 
+        x_dim = config["plot"]["dimensions"][0]
+        x_dim = x_dim if x_dim is not None else self.plot_dimension[0]
+        y_dim = config["plot"]["dimensions"][1]
+        y_dim = y_dim if y_dim is not None else self.plot_dimension[1]
         # Plot
-        plot = figure(width=self.plot_dimension[0], height=self.plot_dimension[1], title=config["plot"]["title"],
+        plot = figure(width=x_dim, height=y_dim, title=config["plot"]["title"],
                       toolbar_location="below", toolbar_sticky=False,
                       tools=[pan, wheel_zoom, box_zoom, tap, save, hover, reset],
                       x_axis_type=config["x_axis"]["plot_scale"], y_axis_type=config["y_axis"]["plot_scale"],
@@ -828,6 +837,8 @@ def check_config(config):
         if "plot" not in config or config["plot"] is None or not isinstance(config["plot"], dict):
             warnings.warn("Missing parameter: plot")
             return -1
+        if "dimensions" not in config["plot"] or len(config["plot"]["dimensions"]) != 2:
+            config["plot"]["dimensions"] = [None, None]
         if "group" not in plot_params or plot_params["group"] == '':
             plot_params["group"] = None
         else:

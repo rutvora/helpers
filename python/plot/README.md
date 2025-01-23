@@ -142,7 +142,9 @@ _Note: `group` can't contain ":"_
 _Note: `output_file` and `output_path` will be ignored in case group is specified. The filename will be the group
 identifier_
 `notes` (Optional, default=None) Some additional HTML text notes that you want to put in the plot
-(only works with Bokeh)
+(only works with Bokeh)  
+`dimensions` (Optional, default=[None, None]) The dimensions of the plot. 
+If None, the plot will use the hard-coded default values  
 
 **histogram**
 `bin_width`: (Optional, default=0) The bin width in a histogram. If 0, plotting library decides bin width on its own
