@@ -99,13 +99,16 @@ class Matplotlib:
         elems = []
         for i in range(0, len(values)):
             value = values[i]
-            color = colors[color_list[i % len(color_list)]]
             x_axis_values = value[0]
             x_axis_err = value[1]
             y_axis_values = value[2]
             y_axis_err = value[3]
             legend = value[4]
             position = value[5]
+            visible = value[6]
+            labels = value[7]
+            color = value[8]
+            color = color if color is not None else colors[color_list[i % len(color_list)]]
 
             if plot_type == "line":
                 if x_axis_values is None:
@@ -288,7 +291,6 @@ class Bokeh:
         color_list = list(colors)
         for i in range(0, len(values)):
             value = values[i]
-            color = colors[color_list[i % len(color_list)]]
             x_axis_values = value[0]
             x_axis_err = value[1]
             y_axis_values = value[2]
@@ -297,6 +299,8 @@ class Bokeh:
             position = value[5]
             visible = value[6]
             labels = value[7]
+            color = value[8]
+            color = color if color is not None else colors[color_list[i % len(color_list)]]
 
             label_offset_x = 5
             label_offset_y = 5
@@ -780,7 +784,8 @@ def get_values(config):
             x_err_values = [item[0] if isinstance(item, (list, np.ndarray)) else item for item in x_err_values]
 
         values.append(
-            (x_values, x_err_values, y_values, y_err_values, legend, position, y_value_param["visible"], labels))
+            (x_values, x_err_values, y_values, y_err_values, legend, position, y_value_param["visible"], labels,
+             y_value_param["color"]))
 
     return values
 
@@ -891,6 +896,8 @@ def check_config(config):
                         legend_map[value["legend"]] = 1
                 else:
                     legend_map[value["legend"]] = 1
+                if "color" not in value or not isinstance(value["color"], str):
+                    value["color"] = None
                 if "scale_by" not in value or not isinstance(value["scale_by"], (numbers.Number, str)):
                     value["scale_by"] = 1
                 if isinstance(value["scale_by"], str) and value["scale_by"] not in ["min", "max", "count", "total"]:

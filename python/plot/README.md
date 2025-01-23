@@ -75,7 +75,8 @@ The `plot_config.json` looks like:
           "scale_by": 1,
           "min_cutoff": 1,
           "max_cutoff": 1,
-          "labels": none
+          "labels": none,
+          "color": "blue"
         }
       ],
       "label": "",
@@ -169,11 +170,11 @@ the following result:
 ]
 ```
 
-`values->legend`: (Optional, default=values->param) The legend of this param to place in the plot. 
+`values->legend`: (Optional, default=values->param) The legend of this param to place in the plot.
 No two legends in the same plot can have duplicates. If there are duplicates, they will default to the param name.  
 `values->visible`: (Optional, default=true) Whether this plot is visible by default (only applicable to Y-axis and in
 bokeh). Max 5 legends set to visible by default. You can click on the legend to make more of them visible.  
-`values->labels`: (Optional, default=None, only on Y-axis) The labels for these individual plot points. 
+`values->labels`: (Optional, default=None, only on Y-axis) The labels for these individual plot points.
 For heatmaps, this label should be an array of integers, which will be used to make the heatmap.  
 `values->position`: (Optional, default="left") The location of the Y-axis (left or right).  
 `values->scale_by`: (Optional, default=1) Divide all values of that axis by this value. Can be a number or "min",
@@ -184,7 +185,9 @@ scale_by). Can be a number or a percentile value specified as a string (e.g. "p2
 scale_by). Can be a number or a percentile value specified as a string (e.g. "p25")  
 `values->error`: (Optional, default=None) The parameter in the results file corresponding to the error of the given
 parameter  
-_Note: `error` applies only to plots where it makes sense (line, for now)_
+_Note: `error` applies only to plots where it makes sense (line, for now)_  
+`values->color`: (Optional, default=None) The color of this element (defaults to some random color from a pre-defined
+list)
 
 `label`: (Optional, default=param.split(".")[-1]) The label for the axis  
 _Note: If param is not specified, label will be "index" on X-axis and "" (null) on Y-axis_
