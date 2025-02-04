@@ -66,7 +66,7 @@ class Bokeh:
         if not os.path.exists(plot_dir):
             os.makedirs(plot_dir)
         os.chdir(plot_dir)
-        output_file_name = f'{config["output_file"]}.html' if group is None else f'{str(group)}'
+        output_file_name = f'{config["output_file"]}' if group is None else f'{str(group)}'
         if output_format == "html":
             html = file_html(plot, CDN, config["plot"]["title"] if group is None else str(group))
             with open(output_file_name + ".html", "w") as f:
