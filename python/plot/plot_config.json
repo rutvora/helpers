@@ -1,11 +1,11 @@
 [
   {
-    "results_file": "path/to/file",
+    "results_file": "results.json",
     "plot": {
       "title": "Title",
       "group": null,
       "renderer": "bokeh",
-      "type": "",
+      "type": "line",
       "histogram": {
         "bin_width": 0.2
       },
@@ -17,7 +17,7 @@
     "x_axis": {
       "values": [
         {
-          "param": "",
+          "param": "[0].x[0][1].w",
           "error": "",
           "legend": "",
           "scale_by": 1,
@@ -33,7 +33,7 @@
     "y_axis": {
       "values": [
         {
-          "param": "",
+          "param": "[0].x[0][1].w",
           "error": "",
           "legend": "Some Legend",
           "visible": true,

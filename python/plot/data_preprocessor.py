@@ -68,8 +68,7 @@ def get_values(config, root_dir):
     # Read the JSON file
     with open(config["results_file"], "r") as f:
         results = json.load(f)
-        if not isinstance(results, list):
-            results = [results]
+        results = [results]
 
     # Initialize the parameters
     x_params = config["x_axis"]

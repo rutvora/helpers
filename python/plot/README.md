@@ -116,8 +116,6 @@ main_proj_dir
       |__ results.json       
 ```
 
-_Note: The results file should be an array of jsons, each of which is a result. Even if the file contains one result, it
-should be in a JSON array format_  
 For example:
 
 ```json
