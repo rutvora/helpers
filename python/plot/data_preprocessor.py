@@ -248,6 +248,6 @@ def get_values(config, root_dir):
 
         values.append(
             (x_values, x_err_values, y_values, y_err_values, legend, position, y_value_param["visible"], labels,
-             y_value_param["color"]))
+             y_value_param["color"], y_value_param["marker"]))
 
     return values

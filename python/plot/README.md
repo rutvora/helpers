@@ -195,7 +195,8 @@ scale_by). Can be a number or a percentile value specified as a string (e.g. "p2
 parameter  
 _Note: `error` applies only to plots where it makes sense (line, for now)_  
 `values->color`: (Optional, default=None) The color of this element (defaults to some random color from a pre-defined
-list)
+list)  
+`values->marker`: (Optional, only on Y-axis, default=circle) The marker/symbol to apply on the elements.  
 
 `label`: (Optional, default=param.split(".")[-1]) The label for the axis  
 _Note: If param is not specified, label will be "index" on X-axis and "" (null) on Y-axis_

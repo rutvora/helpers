@@ -120,6 +120,7 @@ class Bokeh:
             visible = value[6]
             labels = value[7]
             color = value[8]
+            marker = value[9]
             color = color if color is not None else colors[color_list[i % len(color_list)]]
 
             label_offset_x = 5
@@ -137,7 +138,7 @@ class Bokeh:
                 plot.line(x_axis_values, y_axis_values, legend_label=legend, line_width=2, line_color=color, alpha=0.8,
                           muted_color=color, muted_alpha=0.2, y_range_name=position, visible=visible)
                 plot.scatter(x_axis_values, y_axis_values, fill_color=color, size=8, alpha=0.8, legend_label=legend,
-                             muted_color=color, muted_alpha=0.2, y_range_name=position, visible=visible)
+                             marker=marker, muted_color=color, muted_alpha=0.2, y_range_name=position, visible=visible)
 
                 # Draw error bars
                 upper_x = pd.Series([x + err for x, err in zip(x_axis_values, x_axis_err)], index=x_axis_values)
@@ -162,10 +163,12 @@ class Bokeh:
                 dot_size = 10
                 if x_axis_values is not None:
                     plot.scatter(x_axis_values, y_axis_values, legend_label=legend, color=color, size=dot_size,
-                                 alpha=0.8, muted_color=color, muted_alpha=0.2, y_range_name=position, visible=visible)
+                                 marker=marker, alpha=0.8, muted_color=color, muted_alpha=0.2, y_range_name=position,
+                                 visible=visible)
                 else:
                     plot.scatter(y_axis_values, legend_label=legend, color=color, size=dot_size, alpha=0.8,
-                                 muted_color=color, muted_alpha=0.2, y_range_name=position, visible=visible)
+                                 marker=marker, muted_color=color, muted_alpha=0.2, y_range_name=position,
+                                 visible=visible)
             elif plot_type == "histogram":
                 bin_width = config["plot"]["histogram"]["bin_width"]
                 if x_axis_values is not None:

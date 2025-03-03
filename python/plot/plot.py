@@ -7,6 +7,7 @@ import warnings
 
 import progressbar
 from bokeh.models import AdaptiveTicker
+from bokeh.core.enums import MarkerType
 
 from bokeh_wrapper import Bokeh
 from data_preprocessor import get_values
@@ -151,6 +152,9 @@ def check_config(config):
                     legend_map[value["legend"]] = 1
                 if "color" not in value or not isinstance(value["color"], str):
                     value["color"] = None
+                if "marker" not in value or not isinstance(value["marker"], str) or value["marker"] not in list(
+                        MarkerType):
+                    value["marker"] = "circle"
                 if "scale_by" not in value or not isinstance(value["scale_by"], (numbers.Number, str)):
                     value["scale_by"] = 1
                 if isinstance(value["scale_by"], str) and value["scale_by"] not in ["min", "max", "count", "total"]:
