@@ -76,7 +76,10 @@ class Bokeh:
             elif output_format == "svg":
                 export_svg(plot, filename=output_file_name + ".svg")
             elif output_format == "png":
+                curr_toolbar_location = plot.toolbar_location
+                plot.toolbar_location = None
                 export_png(plot, filename=output_file_name + ".png")
+                plot.toolbar_location = curr_toolbar_location
 
     def write_group_plots(self):
         if len(self.groups) == 0:
