@@ -63,8 +63,22 @@ def check_config(config):
         if "plot" not in config or config["plot"] is None or not isinstance(config["plot"], dict):
             warnings.warn("Missing parameter: plot")
             return -1
-        if "output_format" not in config["plot"] or config["plot"]["output_format"] not in ["html", "png", "svg"]:
-            config["plot"]["output_format"] = "html"
+        if "output_format" not in config["plot"]:
+            config["plot"]["output_format"] = ["html"]
+        if isinstance(config["plot"]["output_format"], str):
+            if config["plot"]["output_format"] not in ["html", "png", "svg"]:
+                config["plot"]["output_format"] = ["html"]
+            else:
+                config["plot"]["output_format"] = [config["plot"]["output_format"]]
+        if isinstance(config["plot"]["output_format"], list):
+            output_formats = []
+            for elem in config["plot"]["output_format"]:
+                if elem in ["html", "png", "svg"]:
+                    output_formats.append(elem)
+            if len(output_formats) == 0:
+                config["plot"]["output_format"] = "html"
+            else:
+                config["plot"]["output_format"] = output_formats
         if "dimensions" not in config["plot"] or len(config["plot"]["dimensions"]) != 2:
             config["plot"]["dimensions"] = [None, None]
         if "group" not in plot_params or plot_params["group"] == '':
@@ -259,7 +273,7 @@ def check_config(config):
                 warnings.warn("X-axis has more than 1 value, but less than the number of values in Y-axis.")
                 return -1
 
-    if ("title" not in plot_params or plot_params["title"] == '' or plot_params["title"] is None
+    if ("title" not in plot_params or plot_params["title"] is None
             or not isinstance(plot_params["title"], str)):
         plot_params["title"] = f'{x_params["label"]} vs {y_params["label"]}'
 

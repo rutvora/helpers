@@ -147,9 +147,10 @@ identifier_
 (only works with Bokeh)  
 `dimensions` (Optional, default=[None, None]) The dimensions of the plot.
 If None, the plot will use the hard-coded default values  
-`output_format` (Optional, only applicable to bokeh, default=html). The output format for the bokeh plot.
-Has to be one of "html", "png", "svg". In case the plot is a part of a group, the first encountered output_format value
-is considered. The rest will be ignored.
+`output_format` (Optional, only applicable to bokeh, default=html). The output format or format list for the bokeh plot.
+Has to be one or an array containing one of "html", "png", "svg". 
+In case the plot is a part of a group, the first encountered output_format value (or list) is considered. 
+The rest will be ignored.  
 
 **histogram**
 `bin_width`: (Optional, default=0) The bin width in a histogram. If 0, plotting library decides bin width on its own

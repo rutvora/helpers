@@ -39,10 +39,7 @@ class Bokeh:
         # Variable plot params
         self.groups = {}
 
-    def write_to_file(self, plot, output_format, config=None, group=None):
-        if output_format not in ["html", "svg", "png"]:
-            warnings.warn("Output format not supported. Defaulting to html")
-            output_format = "html"
+    def write_to_file(self, plot, output_formats, config=None, group=None):
         # Write to file
         if config is None and group is None:
             warnings.warn("Either config or group should be present when writing to file!")
@@ -67,14 +64,19 @@ class Bokeh:
             os.makedirs(plot_dir)
         os.chdir(plot_dir)
         output_file_name = f'{config["output_file"]}' if group is None else f'{str(group)}'
-        if output_format == "html":
-            html = file_html(plot, CDN, config["plot"]["title"] if group is None else str(group))
-            with open(output_file_name + ".html", "w") as f:
-                f.write(html)
-        elif output_format == "svg":
-            export_svg(plot, filename=output_file_name + ".svg")
-        elif output_format == "png":
-            export_png(plot, filename=output_file_name + ".png")
+
+        for output_format in output_formats:
+            if output_format not in ["html", "svg", "png"]:
+                warnings.warn("Output format not supported. Defaulting to html")
+                output_format = "html"
+            if output_format == "html":
+                html = file_html(plot, CDN, config["plot"]["title"] if group is None else str(group))
+                with open(output_file_name + ".html", "w") as f:
+                    f.write(html)
+            elif output_format == "svg":
+                export_svg(plot, filename=output_file_name + ".svg")
+            elif output_format == "png":
+                export_png(plot, filename=output_file_name + ".png")
 
     def write_group_plots(self):
         if len(self.groups) == 0:
@@ -84,7 +86,7 @@ class Bokeh:
         progress = 0
         for group, (plots, output_format) in self.groups.items():
             grid = gridplot(plots, ncols=self.grid_columns)
-            self.write_to_file(grid, output_format=output_format, group=group)
+            self.write_to_file(grid, output_formats=output_format, group=group)
             progress += 1
             progress_bar.update(progress)
         progress_bar.finish()
