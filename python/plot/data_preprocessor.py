@@ -34,41 +34,53 @@ def get_param_value(param_path, json_object, min_cutoff, max_cutoff):
                     value = value[key]
                 for index in indices:
                     value = value[int(index)]
-            else:
-                value = value[key]
     except (KeyError, IndexError, TypeError):
         warning = "Could not find the parameter at path: " + param_path + ". Skipping specified param..."
         warnings.warn(warning)
         return []
-    if isinstance(value, list):
-        if isinstance(min_cutoff, str):
-            min_cutoff = np.percentile(value, float(min_cutoff[1:]))
-        if isinstance(max_cutoff, str):
-            max_cutoff = np.percentile(value, float(max_cutoff[1:]))
-        if min_cutoff is not None:
-            value = [np.nan if elem < min_cutoff else elem for elem in value if isinstance(elem, numbers.Number)]
-        if max_cutoff is not None:
-            value = [np.nan if elem > max_cutoff else elem for elem in value if isinstance(elem, numbers.Number)]
+    if isinstance(min_cutoff, str):
+        min_cutoff = np.percentile(value, float(min_cutoff[1:]))
+    if isinstance(max_cutoff, str):
+        max_cutoff = np.percentile(value, float(max_cutoff[1:]))
+    if min_cutoff is not None:
+        value = [np.nan if elem < min_cutoff else elem for elem in value if isinstance(elem, numbers.Number)]
+    if max_cutoff is not None:
+        value = [np.nan if elem > max_cutoff else elem for elem in value if isinstance(elem, numbers.Number)]
+    if min_cutoff is not None or max_cutoff is not None:
+        nan_count = np.sum(np.isnan(value))
         if min_cutoff is not None or max_cutoff is not None:
-            nan_count = np.sum(np.isnan(value))
-            if min_cutoff is not None or max_cutoff is not None:
-                print("% of values removed due to cutoffs from path", param_path, "is",
-                      nan_count / len(value) * 100, "%")
-    elif isinstance(value, numbers.Number):
-        if min_cutoff is not None and value < min_cutoff:
-            value = np.nan
-        if max_cutoff is not None and value > max_cutoff:
-            value = np.nan
+            print("% of values removed due to cutoffs from path", param_path, "is",
+                  nan_count / len(value) * 100, "%")
     return value
 
 
 # Get the X and Y axis values to plot
 def get_values(config, root_dir):
+    def get_axis_values(axis_value_param):
+        axis_values = get_param_value(axis_value_param["param"], results,
+                                      axis_value_param["min_cutoff"],
+                                      axis_value_param["max_cutoff"])
+        axis_values = np.array(axis_values)
+        axis_value_param["scale_by"] = get_scale_by_value(axis_values, axis_value_param["scale_by"])
+        axis_values = axis_values / axis_value_param["scale_by"]
+
+        # Error values
+        if axis_value_param["error"] is not None:
+            axis_err_values = get_param_value(axis_value_param["error"], results, None, None)
+            if axis_err_values is not None:
+                axis_err_values = np.array(axis_err_values)
+                axis_err_values = axis_err_values / axis_value_param["scale_by"]
+        else:
+            # Set err_values as 0
+            axis_err_values = np.array([0] * len(axis_values))
+
+        return axis_values, axis_err_values
+
+
     os.chdir(root_dir)
     # Read the JSON file
     with open(config["results_file"], "r") as f:
         results = json.load(f)
-        results = [results]
 
     # Initialize the parameters
     x_params = config["x_axis"]
@@ -106,46 +118,9 @@ def get_values(config, root_dir):
             position = y_value_param["position"]
             # Labels
             if y_value_param["labels"] is not None:
-                labels = [labels for result in results if (
-                    labels := get_param_value(y_value_param["labels"], result, None, None)
-                ) is not None]
-                labels = np.array(labels).T
+                labels = get_param_value(y_value_param["labels"], results, None, None)
             # Values
-            y_values = [param_value for result in results if
-                        (param_value := get_param_value(y_value_param["param"], result,
-                                                        y_value_param["min_cutoff"],
-                                                        y_value_param["max_cutoff"])) is not None]
-            y_values = np.array(y_values).T
-            y_value_param["scale_by"] = get_scale_by_value(y_values, y_value_param["scale_by"])
-            y_values = y_values / y_value_param["scale_by"]
-
-            # Pad the values with NaNs if y_values is array of arrays
-            if (isinstance(y_values, (list, np.ndarray))
-                    and len(y_values) > 0
-                    and isinstance(y_values[0], (list, np.ndarray))):
-                max_length = max(len(y) for y in y_values)
-                y_values = np.array([np.append(y, [np.nan] * (max_length - len(y))) for y in y_values])
-            else:
-                max_length = len(y_values)
-
-            # Error values
-            if y_value_param["error"] is not None:
-                y_err_values = [param_value for result in results if
-                                (param_value := get_param_value(y_value_param["error"], result,
-                                                                None,
-                                                                None)) is not None]
-                if y_err_values is not None:
-                    y_err_values = np.array(y_err_values).T
-                    y_err_values = y_err_values / y_value_param["scale_by"]
-            else:
-                # Set err_values as 0
-                if (isinstance(y_values, (list, np.ndarray))
-                        and len(y_values) > 0
-                        and isinstance(y_values[0], (list, np.ndarray))):
-                    y_err_values = [[0 for _ in range(0, max_length)] for _ in range(0, len(y_values))]
-                else:
-                    y_err_values = [[0 for _ in range(0, max_length)]]
-                y_err_values = np.array(y_err_values)
+            y_values, y_err_values = get_axis_values(y_value_param)
         else:
             y_values = y_err_values = None
 
@@ -155,46 +130,11 @@ def get_values(config, root_dir):
                 legend = x_value_param["legend"]  # Only set if y_param has not already set it
 
             # values
-            x_values = [param_value for result in results if
-                        (param_value := get_param_value(x_value_param["param"], result,
-                                                        x_value_param["min_cutoff"],
-                                                        x_value_param["max_cutoff"])) is not None]
-            x_values = np.array(x_values).T
-            x_value_param["scale_by"] = get_scale_by_value(x_values, x_value_param["scale_by"])
-            x_values = x_values / x_value_param["scale_by"]
-
-            # Pad the values with NaNs if x_values is array of arrays
-            if (isinstance(x_values, (list, np.ndarray))
-                    and len(x_values) > 0
-                    and isinstance(x_values[0], (list, np.ndarray))):
-                max_length = max(len(x) for x in x_values)
-                x_values = np.array([np.append(x, [np.nan] * (max_length - len(x))) for x in x_values])
-
-            # Error values
-            if x_value_param["error"] is not None:
-                x_err_values = [param_value for result in results if
-                                (param_value := get_param_value(x_value_param["error"], result,
-                                                                None,
-                                                                None)) is not None]
-                if x_err_values is not None:
-                    x_err_values = np.array(x_err_values).T
-                    x_err_values = x_err_values / x_value_param["scale_by"]
-            else:
-                # Set err_values as 0
-                if (isinstance(x_values, (list, np.ndarray))
-                        and len(x_values) > 0
-                        and isinstance(x_values[0], (list, np.ndarray))):
-                    x_err_values = [[0 for _ in range(0, max_length)] for _ in range(0, len(x_values))]
-                else:
-                    x_err_values = [[0 for _ in range(0, max_length)]]
+            x_values, x_err_values = get_axis_values(x_value_param)
         else:
             # Generate x_values as index and x_err_values as 0
-            if y_values is not None and isinstance(y_values[0], (list, np.ndarray)):
-                x_values = [[i for i in range(0, max_length)] for _ in range(0, len(y_values))]
-                x_err_values = [[0 for _ in range(0, max_length)] for _ in range(0, len(y_values))]
-            else:
-                x_values = [i for i in range(0, max_length)]
-                x_err_values = [[0 for _ in range(0, max_length)]]
+            x_values = np.array([i for i in range(1, len(y_values) + 1)])
+            x_err_values = np.array([0] * len(x_values))
 
         # Sort the values by X-axis
         if len(x_values) != len(x_err_values):
@@ -235,16 +175,13 @@ def get_values(config, root_dir):
             combined_array = zip(x_values, x_err_values, y_values, y_err_values, labels)
             sorted_array = sorted(combined_array, key=lambda x: x[0])
             x_values, x_err_values, y_values, y_err_values, labels = zip(*sorted_array)
-            y_values = [item[0] if isinstance(item, (list, np.ndarray)) else item for item in y_values]
-            y_err_values = [item[0] if isinstance(item, (list, np.ndarray)) else item for item in y_err_values]
-            labels = [item[0] if isinstance(item, (list, np.ndarray)) else item for item in labels]
+            x_values = list(x_values)
+            x_err_values = list(x_err_values)
+            y_values = list(y_values)
+            y_err_values = list(y_err_values)
+            labels = list(labels)
             if all(elem is None for elem in labels):
                 labels = None
-
-        # Unpack x_values if necessary
-        if x_values is not None:
-            x_values = [item[0] if isinstance(item, (list, np.ndarray)) else item for item in x_values]
-            x_err_values = [item[0] if isinstance(item, (list, np.ndarray)) else item for item in x_err_values]
 
         values.append(
             (x_values, x_err_values, y_values, y_err_values, legend, position, y_value_param["visible"], labels,
