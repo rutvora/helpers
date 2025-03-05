@@ -207,7 +207,7 @@ class Bokeh:
         label_offset_y = 5
         for i in range(0, len(values)):
             x_axis_values, x_axis_err, y_axis_values, y_axis_err, legend, position, visible, labels, color, marker \
-                = values
+                = values[i]
             # Skip the plot if no parameters were found
             if y_axis_values is None or len(y_axis_values) == 0:
                 return -1
