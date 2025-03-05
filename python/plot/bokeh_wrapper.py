@@ -24,6 +24,7 @@ colors = {
     "violet": "#665191",
     "black": "#444444",
 }
+color_list = list(colors)
 
 
 class Bokeh:
@@ -106,112 +107,120 @@ class Bokeh:
 
         return r, g, b
 
+    @staticmethod
+    def plot_scatter(plot, values, i):
+        x_axis_values, x_axis_err, y_axis_values, y_axis_err, legend, position, visible, labels, color, marker = values
+        color = color if color is not None else colors[color_list[i % len(color_list)]]
+        dot_size = 10
+        if x_axis_values is not None:
+            plot.scatter(x_axis_values, y_axis_values, legend_label=legend, color=color, line_color=color,
+                         size=dot_size, marker=marker, alpha=0.8, muted_color=color, muted_alpha=0.2,
+                         y_range_name=position, visible=visible)
+        else:
+            plot.scatter(y_axis_values, legend_label=legend, color=color, line_color=color,
+                         size=dot_size, alpha=0.8, marker=marker, muted_color=color, muted_alpha=0.2,
+                         y_range_name=position, visible=visible)
+
+    @staticmethod
+    def plot_line(plot, values, i):
+        x_axis_values, x_axis_err, y_axis_values, y_axis_err, legend, position, visible, labels, color, marker = values
+        color = color if color is not None else colors[color_list[i % len(color_list)]]
+        if x_axis_values is None:
+            x_axis_values = range(len(y_axis_values))
+
+        # Draw line and points
+        plot.line(x_axis_values, y_axis_values, legend_label=legend, line_width=2, line_color=color, alpha=0.8,
+                  muted_color=color, muted_alpha=0.2, y_range_name=position, visible=visible)
+        plot.scatter(x_axis_values, y_axis_values, fill_color=color, line_color=color, size=8, alpha=0.8,
+                     legend_label=legend, marker=marker, muted_color=color, muted_alpha=0.2,
+                     y_range_name=position, visible=visible)
+
+        # Draw error bars
+        upper_x = pd.Series([x + err for x, err in zip(x_axis_values, x_axis_err)], index=x_axis_values)
+        lower_x = pd.Series([x - err for x, err in zip(x_axis_values, x_axis_err)], index=x_axis_values)
+        upper_y = pd.Series([y + err for y, err in zip(y_axis_values, y_axis_err)], index=x_axis_values)
+        lower_y = pd.Series([y - err for y, err in zip(y_axis_values, y_axis_err)], index=x_axis_values)
+
+        source_x = ColumnDataSource(data=dict(base=y_axis_values, upper=upper_x, lower=lower_x))
+        source_y = ColumnDataSource(data=dict(base=x_axis_values, upper=upper_y, lower=lower_y))
+        if x_axis_err != [0] * len(x_axis_err):
+            plot.add_layout(Whisker(base="base", upper="upper", lower="lower", level='glyph', dimension='width',
+                                    source=source_x, line_color='black', y_range_name=position,
+                                    visible=visible))
+        if y_axis_err != [0] * len(y_axis_err):
+            # plot.add_layout(Whisker(base="base", upper="upper", lower="lower", level='glyph',
+            #                        dimension='height', source=source_y, line_color='black'))
+            # Vertical area for 1 std deviation
+            plot.varea(x="base", y1="lower", y2="upper", source=source_y, fill_color=color, fill_alpha=0.15,
+                       legend_label=legend, y_range_name=position, visible=visible)
+
+    @staticmethod
+    def plot_histogram(plot, values, config, i):
+        x_axis_values, x_axis_err, y_axis_values, y_axis_err, legend, position, visible, labels, color, marker = values
+        color = color if color is not None else colors[color_list[i % len(color_list)]]
+        bin_width = config["plot"]["histogram"]["bin_width"]
+        if x_axis_values is not None:
+            data = x_axis_values
+        else:
+            data = y_axis_values
+
+        data = [elem for elem in data if not np.isnan(elem)]
+        if bin_width != 0:
+            bins = np.arange(min(data), max(data), bin_width)
+        else:
+            bins = "auto"
+
+        hist, edges = np.histogram(data, bins=bins)
+        hist = hist / sum(hist)
+
+        plot.quad(top=hist, bottom=0, left=edges[:-1], right=edges[1:], fill_color=color, line_color="white",
+                  legend_label=legend, alpha=0.8, muted_color=color, muted_alpha=0.2, y_range_name=position,
+                  visible=visible)
+        if bins != "auto" and config["x_axis"]["ticks"] is None:
+            config["x_axis"]["ticks"] = bins
+        yticks = [0, 0.2, 0.4, 0.6, 0.8, 1]
+        config["y_axis"]["ticks"] = yticks
+        plot.y_range = Range1d(0, 1)
+        plot.yaxis.formatter = NumeralTickFormatter(format="0%")
+
+    @staticmethod
+    def plot_heatmap(plot, values, i):
+        x_axis_values, x_axis_err, y_axis_values, y_axis_err, legend, position, visible, labels, color, marker = values
+        color = color if color is not None else colors[color_list[i % len(color_list)]]
+        if labels is None:
+            print("Heatmap requires labels for y axes")
+            return -1
+        min_val = np.nanmin(
+            [float(label) if isinstance(label, (numbers.Number, str)) else float('nan') for label in labels])
+        max_val = np.nanmax(
+            [float(label) if isinstance(label, (numbers.Number, str)) else float('nan') for label in labels])
+        for j in range(0, len(x_axis_values)):
+            if labels[j] is None:
+                continue
+            plot.rect(x=x_axis_values[j], y=y_axis_values[j], width=1, height=1,
+                      fill_color=Bokeh.get_heatmap_color(min_val, max_val, float(labels[j])),
+                      line_color=None)
+
     def plot_by_type(self, plot, config, values):
         plot_type = config["plot"]["type"]
-        color_list = list(colors)
+        label_offset_x = 5
+        label_offset_y = 5
         for i in range(0, len(values)):
-            value = values[i]
-            x_axis_values = value[0]
-            x_axis_err = value[1]
-            y_axis_values = value[2]
-            y_axis_err = value[3]
-            legend = value[4]
-            position = value[5]
-            visible = value[6]
-            labels = value[7]
-            color = value[8]
-            marker = value[9]
-            color = color if color is not None else colors[color_list[i % len(color_list)]]
-
-            label_offset_x = 5
-            label_offset_y = 5
-
+            x_axis_values, x_axis_err, y_axis_values, y_axis_err, legend, position, visible, labels, color, marker \
+                = values
             # Skip the plot if no parameters were found
             if y_axis_values is None or len(y_axis_values) == 0:
                 return -1
 
             if plot_type == "line":
-                if x_axis_values is None:
-                    x_axis_values = range(len(y_axis_values))
-
-                # Draw line and points
-                plot.line(x_axis_values, y_axis_values, legend_label=legend, line_width=2, line_color=color, alpha=0.8,
-                          muted_color=color, muted_alpha=0.2, y_range_name=position, visible=visible)
-                plot.scatter(x_axis_values, y_axis_values, fill_color=color, line_color=color, size=8, alpha=0.8,
-                             legend_label=legend, marker=marker, muted_color=color, muted_alpha=0.2,
-                             y_range_name=position, visible=visible)
-
-                # Draw error bars
-                upper_x = pd.Series([x + err for x, err in zip(x_axis_values, x_axis_err)], index=x_axis_values)
-                lower_x = pd.Series([x - err for x, err in zip(x_axis_values, x_axis_err)], index=x_axis_values)
-                upper_y = pd.Series([y + err for y, err in zip(y_axis_values, y_axis_err)], index=x_axis_values)
-                lower_y = pd.Series([y - err for y, err in zip(y_axis_values, y_axis_err)], index=x_axis_values)
-
-                source_x = ColumnDataSource(data=dict(base=y_axis_values, upper=upper_x, lower=lower_x))
-                source_y = ColumnDataSource(data=dict(base=x_axis_values, upper=upper_y, lower=lower_y))
-                if x_axis_err != [0] * len(x_axis_err):
-                    plot.add_layout(Whisker(base="base", upper="upper", lower="lower", level='glyph', dimension='width',
-                                            source=source_x, line_color='black', y_range_name=position,
-                                            visible=visible))
-                if y_axis_err != [0] * len(y_axis_err):
-                    # plot.add_layout(Whisker(base="base", upper="upper", lower="lower", level='glyph',
-                    #                        dimension='height', source=source_y, line_color='black'))
-                    # Vertical area for 1 std deviation
-                    plot.varea(x="base", y1="lower", y2="upper", source=source_y, fill_color=color, fill_alpha=0.15,
-                               legend_label=legend, y_range_name=position, visible=visible)
-
+                self.plot_line(plot, values[i], i)
             elif plot_type == "scatter":
-                dot_size = 10
-                if x_axis_values is not None:
-                    plot.scatter(x_axis_values, y_axis_values, legend_label=legend, color=color, line_color=color,
-                                 size=dot_size, marker=marker, alpha=0.8, muted_color=color, muted_alpha=0.2,
-                                 y_range_name=position, visible=visible)
-                else:
-                    plot.scatter(y_axis_values, legend_label=legend, color=color, line_color=color,
-                                 size=dot_size, alpha=0.8, marker=marker, muted_color=color, muted_alpha=0.2,
-                                 y_range_name=position, visible=visible)
+                self.plot_scatter(plot, values[i], i)
             elif plot_type == "histogram":
-                bin_width = config["plot"]["histogram"]["bin_width"]
-                if x_axis_values is not None:
-                    data = x_axis_values
-                else:
-                    data = y_axis_values
-
-                data = [elem for elem in data if not np.isnan(elem)]
-                if bin_width != 0:
-                    bins = np.arange(min(data), max(data), bin_width)
-                else:
-                    bins = "auto"
-
-                hist, edges = np.histogram(data, bins=bins)
-                hist = hist / sum(hist)
-
-                plot.quad(top=hist, bottom=0, left=edges[:-1], right=edges[1:], fill_color=color, line_color="white",
-                          legend_label=legend, alpha=0.8, muted_color=color, muted_alpha=0.2, y_range_name=position,
-                          visible=visible)
-                if bins != "auto" and config["x_axis"]["ticks"] is None:
-                    config["x_axis"]["ticks"] = bins
-                yticks = [0, 0.2, 0.4, 0.6, 0.8, 1]
-                config["y_axis"]["ticks"] = yticks
-                plot.y_range = Range1d(0, 1)
-                plot.yaxis.formatter = NumeralTickFormatter(format="0%")
+                self.plot_histogram(plot, values[i], config, i)
             elif plot_type == "heatmap":
-                if labels is None:
-                    print("Heatmap requires labels for y axes")
-                    return -1
-                min_val = np.nanmin(
-                    [float(label) if isinstance(label, (numbers.Number, str)) else float('nan') for label in labels])
-                max_val = np.nanmax(
-                    [float(label) if isinstance(label, (numbers.Number, str)) else float('nan') for label in labels])
-                for j in range(0, len(x_axis_values)):
-                    if labels[j] is None:
-                        continue
-                    plot.rect(x=x_axis_values[j], y=y_axis_values[j], width=1, height=1,
-                              fill_color=Bokeh.get_heatmap_color(min_val, max_val, float(labels[j])),
-                              line_color=None)
-
-                label_offset_x = 0
-                label_offset_y = 0
+                self.plot_heatmap(plot, values[i], i)
+                label_offset_x = label_offset_y = 0
             else:
                 warnings.warn(f"Invalid plot type, skipping plot with title {config['plot']['title']}")
                 return -1
