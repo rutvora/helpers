@@ -82,6 +82,8 @@ def check_config(config):
                 config["plot"]["output_format"] = output_formats
         if "dimensions" not in config["plot"] or len(config["plot"]["dimensions"]) != 2:
             config["plot"]["dimensions"] = [None, None]
+        if "legend_location" not in config["plot"] or not isinstance(config["plot"]["legend_location"], str):
+            config["plot"]["legend_location"] = "top_left"
         if "group" not in plot_params or plot_params["group"] == '':
             plot_params["group"] = None
         else:
@@ -141,9 +143,9 @@ def check_config(config):
             for value in axis["values"]:
                 if "error" not in value or value["error"] == '' or not isinstance(value["error"], str):
                     value["error"] = None
-                if "legend" not in value or not isinstance(value["legend"], str) or value["legend"] in legend_map:
+                if "legend" not in value or not isinstance(value["legend"], str | None) or value["legend"] in legend_map:
                     value["legend"] = value["param"]
-                    if value["legend"] in legend_map:
+                    if value["legend"] in legend_map and value["legend"] is not None:
                         legend_map[value["legend"]] += 1
                         value["legend"] = value["legend"] + "_" + str(legend_map[value["legend"]])
                     else:

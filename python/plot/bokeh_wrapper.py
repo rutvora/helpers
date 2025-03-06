@@ -112,14 +112,26 @@ class Bokeh:
         x_axis_values, x_axis_err, y_axis_values, y_axis_err, legend, position, visible, labels, color, marker = values
         color = color if color is not None else colors[color_list[i % len(color_list)]]
         dot_size = 10
+        args = []
         if x_axis_values is not None:
-            plot.scatter(x_axis_values, y_axis_values, legend_label=legend, color=color, line_color=color,
-                         size=dot_size, marker=marker, alpha=0.8, muted_color=color, muted_alpha=0.2,
-                         y_range_name=position, visible=visible)
-        else:
-            plot.scatter(y_axis_values, legend_label=legend, color=color, line_color=color,
-                         size=dot_size, alpha=0.8, marker=marker, muted_color=color, muted_alpha=0.2,
-                         y_range_name=position, visible=visible)
+            args.append(x_axis_values)
+        args.append(y_axis_values)
+
+        kwargs = {
+            "color": color,
+            "line_color": color,
+            "size": dot_size,
+            "marker": marker,
+            "alpha": 0.8,
+            "muted_color": color,
+            "muted_alpha": 0.2,
+            "y_range_name": position,
+            "visible": visible
+        }
+        if legend is not None:
+            kwargs["legend_label"] = legend
+
+        plot.scatter(*args, **kwargs)
 
     @staticmethod
     def plot_line(plot, values, i):
@@ -353,7 +365,7 @@ class Bokeh:
         # Legend Location
         if len(plot.legend) > 0:
             plot.legend.click_policy = "hide"  # "hide" or "mute"
-            plot.legend.location = "top_left"
+            plot.legend.location = config["plot"]["legend_location"]
             plot.legend.ncols = int(len(plot.legend.items) / 10) + 1
             if plot.legend.ncols > 2:
                 plot.add_layout(plot.legend[0], "below")

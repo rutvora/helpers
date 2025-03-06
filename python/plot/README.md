@@ -42,6 +42,7 @@ The `plot_config.json` looks like:
       "title": "",
       "group": null,
       "renderer": "bokeh",
+      "legend_location": "top_left",
       "type": "",
       "output_format": "html",
       "dimensions": [1280, 768],
@@ -136,8 +137,10 @@ _Note: `output_path` can't contain ":"_
 `title`: (Optional, default="{x_label} vs {y_label}") The title for the plot  
 `renderer`: (Optional, default="bokeh") The library to use for plotting. Either "bokeh" or "matplotlib"  
 `type`: (Required, allowed="line", "scatter", "histogram", "heatmap") The type of plot to be used  
-_Note: If `type` is `histogram`, the plot will be generated from the X-axis if it exists, else the Y-axis._  
+_Note: If `type` is `histogram`, the plot will be generated from the X-axis if it exists, else the Y-axis._
 `histogram`, `line`, or `scatter`: Parameters specific to the given plot type
+`legend_location`: (Optional, default="top_left"). The location of the legend inside the plot.
+This argument will be ignored if the legend is too large to place inside the plot.  
 `group`: (Optional, int or string) If you want to group plots into a single HTML or image, specify the group
 identifier here  
 _Note: `group` can't contain ":"_  
@@ -179,7 +182,8 @@ the following result:
 ```
 
 `values->legend`: (Optional, default=values->param) The legend of this param to place in the plot.
-No two legends in the same plot can have duplicates. If there are duplicates, they will default to the param name.  
+No two legends in the same plot can have duplicates. If there are duplicates, they will default to the param name.
+You can explicitly set legend to `null` to not show it in the plot's legend table.  
 `values->visible`: (Optional, default=true) Whether this plot is visible by default (only applicable to Y-axis and in
 bokeh). Max 5 legends set to visible by default. You can click on the legend to make more of them visible.  
 `values->labels`: (Optional, default=None, only on Y-axis) The labels for these individual plot points.

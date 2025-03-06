@@ -62,20 +62,21 @@ def get_values(config, root_dir):
                                       axis_value_param["max_cutoff"])
         axis_values = np.array(axis_values)
         axis_value_param["scale_by"] = get_scale_by_value(axis_values, axis_value_param["scale_by"])
-        axis_values = axis_values / axis_value_param["scale_by"]
+        if axis_value_param["scale_by"] != 1:
+            axis_values = axis_values / axis_value_param["scale_by"]
 
         # Error values
         if axis_value_param["error"] is not None:
             axis_err_values = get_param_value(axis_value_param["error"], results, None, None)
             if axis_err_values is not None:
                 axis_err_values = np.array(axis_err_values)
-                axis_err_values = axis_err_values / axis_value_param["scale_by"]
+                if axis_value_param["scale_by"] != 1:
+                    axis_err_values = axis_err_values / axis_value_param["scale_by"]
         else:
             # Set err_values as 0
             axis_err_values = np.array([0] * len(axis_values))
 
         return axis_values, axis_err_values
-
 
     os.chdir(root_dir)
     # Read the JSON file
@@ -125,9 +126,6 @@ def get_values(config, root_dir):
             y_values = y_err_values = None
 
         if x_value_param is not None:
-            # Legend
-            if legend is None:
-                legend = x_value_param["legend"]  # Only set if y_param has not already set it
 
             # values
             x_values, x_err_values = get_axis_values(x_value_param)
@@ -171,7 +169,8 @@ def get_values(config, root_dir):
             labels = [None] * len(y_values)
 
         # Sort the array
-        if y_values is not None and len(y_values) > 0 and x_values is not None and len(x_values) > 0:
+        if y_values is not None and len(y_values) > 0 and x_values is not None and len(x_values) > 0 \
+                and not all(isinstance(elem, str) for elem in x_values):
             combined_array = zip(x_values, x_err_values, y_values, y_err_values, labels)
             sorted_array = sorted(combined_array, key=lambda x: x[0])
             x_values, x_err_values, y_values, y_err_values, labels = zip(*sorted_array)
