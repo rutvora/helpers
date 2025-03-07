@@ -141,11 +141,31 @@ class Bokeh:
             x_axis_values = range(len(y_axis_values))
 
         # Draw line and points
-        plot.line(x_axis_values, y_axis_values, legend_label=legend, line_width=2, line_color=color, alpha=0.8,
-                  muted_color=color, muted_alpha=0.2, y_range_name=position, visible=visible)
-        plot.scatter(x_axis_values, y_axis_values, fill_color=color, line_color=color, size=8, alpha=0.8,
-                     legend_label=legend, marker=marker, muted_color=color, muted_alpha=0.2,
-                     y_range_name=position, visible=visible)
+        line_kwargs = {
+            "line_width": 2,
+            "line_color": color,
+            "alpha": 0.8,
+            "muted_color": color,
+            "muted_alpha": 0.2,
+            "y_range_name": position,
+            "visible": visible
+        }
+        scatter_kwargs = {
+            "fill_color": color,
+            "line_color": color,
+            "size": 8,
+            "alpha": 0.8,
+            "muted_color": color,
+            "muted_alpha": 0.2,
+            "y_range_name": position,
+            "visible": visible,
+            "marker": marker
+        }
+        if legend is not None:
+            line_kwargs["legend_label"] = scatter_kwargs["legend_label"] = legend
+
+        plot.line(x_axis_values, y_axis_values, **line_kwargs)
+        plot.scatter(x_axis_values, y_axis_values, **scatter_kwargs)
 
         # Draw error bars
         upper_x = pd.Series([x + err for x, err in zip(x_axis_values, x_axis_err)], index=x_axis_values)
@@ -160,11 +180,19 @@ class Bokeh:
                                     source=source_x, line_color='black', y_range_name=position,
                                     visible=visible))
         if y_axis_err != [0] * len(y_axis_err):
-            # plot.add_layout(Whisker(base="base", upper="upper", lower="lower", level='glyph',
-            #                        dimension='height', source=source_y, line_color='black'))
-            # Vertical area for 1 std deviation
-            plot.varea(x="base", y1="lower", y2="upper", source=source_y, fill_color=color, fill_alpha=0.15,
-                       legend_label=legend, y_range_name=position, visible=visible)
+            varea_kwargs = {
+                "x": "base",
+                "y1": "lower",
+                "y2": "upper",
+                "source": source_y,
+                "fill_color": color,
+                "fill_alpha": 0.15,
+                "y_range_name": position,
+                "visible": visible
+            }
+            if legend is not None:
+                varea_kwargs["legend_label"] = legend
+            plot.varea(**varea_kwargs)
 
     @staticmethod
     def plot_histogram(plot, values, config, i):
@@ -185,9 +213,23 @@ class Bokeh:
         hist, edges = np.histogram(data, bins=bins)
         hist = hist / sum(hist)
 
-        plot.quad(top=hist, bottom=0, left=edges[:-1], right=edges[1:], fill_color=color, line_color="white",
-                  legend_label=legend, alpha=0.8, muted_color=color, muted_alpha=0.2, y_range_name=position,
-                  visible=visible)
+        kwargs = {
+            "top": hist,
+            "bottom": 0,
+            "left": edges[:-1],
+            "right": edges[1:],
+            "fill_color": color,
+            "line_color": "white",
+            "alpha": 0.8,
+            "muted_color": color,
+            "muted_alpha": 0.2,
+            "y_range_name": position,
+            "visible": visible
+        }
+        if legend is not None:
+            kwargs["legend_label"] = legend
+
+        plot.quad(**kwargs)
         if bins != "auto" and config["x_axis"]["ticks"] is None:
             config["x_axis"]["ticks"] = bins
         yticks = [0, 0.2, 0.4, 0.6, 0.8, 1]
