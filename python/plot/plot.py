@@ -209,6 +209,8 @@ def check_config(config):
                     "The number of y_ticks and y_tick_labels must be the same on Y-axis."
                     "Faulty config with results file "
                     f"{config['results_file']}, ignoring the tick labels")
+                axis["tick_labels"] = None
+            else:
                 temp = {}
                 for idx in range(0, len(axis["ticks"])):
                     temp[axis["ticks"][idx]] = axis["tick_labels"][idx]
@@ -228,6 +230,8 @@ def check_config(config):
                 warnings.warn(
                     f"The number of y_ticks and y_tick_labels must be the same on the right Y-axis."
                     f"Faulty config with results file {config['results_file']}. Ignoring the right-side tick labels")
+                axis["tick_labels_right"] = None
+            else:
                 temp = {}
                 for idx in range(0, len(axis["ticks_right"])):
                     temp[axis["ticks_right"][idx]] = axis["tick_labels_right"][idx]
